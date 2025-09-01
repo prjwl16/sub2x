@@ -7,7 +7,7 @@ import { xClient } from './external/x.client'
 export const posts = {
   async list(
     userId: string,
-    filter: { status?: string; from?: string; to?: string },
+    filter: { status?: string; from?: Date | null; to?: Date | null },
     pagination: { offset: number; limit: number }
   ): Promise<{ items: PostItem[]; meta: PaginationMeta }> {
     const where: any = { userId }

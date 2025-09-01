@@ -14,8 +14,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const pagination = parsePagination(searchParams)
     const filter = PostStatusFilterSchema.parse({
       status: searchParams.get('status'),
-      from: searchParams.get('from'),
-      to: searchParams.get('to'),
+      from: searchParams.get('from') ? new Date(searchParams.get('from')!) : null,
+      to: searchParams.get('to') ? new Date(searchParams.get('to')!) : null,
     })
 
     const result = await posts.list(userId, filter, pagination)

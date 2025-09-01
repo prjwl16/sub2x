@@ -8,7 +8,7 @@ import { PostingPlanCard } from "@/components/cards/PostingPlanCard"
 import { CommunitiesCard } from "@/components/cards/CommunitiesCard"
 import { StatusCard } from "@/components/cards/StatusCard"
 import { EditPlanModal } from "@/components/modals/EditPlanModal"
-import { PreviewTweetDrawer } from "@/components/drawers/PreviewTweetDrawer"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Toast, useToast } from "@/components/ui/toast"
 
@@ -16,7 +16,7 @@ export default function Dashboard() {
   const { data: session } = useSession()
   const { toasts, addToast, removeToast } = useToast()
   const [editPlanOpen, setEditPlanOpen] = useState(false)
-  const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false)
+
 
   if (!session) {
     return (
@@ -69,6 +69,11 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Highlight Status Card - Full Width */}
+        <div className="mb-8">
+          <StatusCard />
+        </div>
+
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* <ConnectedAccountCard 
@@ -85,10 +90,6 @@ export default function Dashboard() {
             onReorder={handleReorderCommunities}
             onManage={handleManageCommunities}
           />
-          
-          <StatusCard
-            onPreviewNext={() => setPreviewDrawerOpen(true)}
-          />
         </div>
       </div>
 
@@ -98,10 +99,7 @@ export default function Dashboard() {
         onOpenChange={setEditPlanOpen}
       />
 
-      <PreviewTweetDrawer
-        open={previewDrawerOpen}
-        onOpenChange={setPreviewDrawerOpen}
-      />
+
 
       {/* Toast Notifications */}
       {toasts.map((toast) => (

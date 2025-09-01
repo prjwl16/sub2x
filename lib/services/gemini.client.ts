@@ -185,3 +185,122 @@ export async function summarizeVoice(input: { tweets: XTweet[]; locale?: string 
     return null
   }
 }
+
+export interface GenerateTweetsInput {
+  redditPosts: Array<{
+    title: string
+    selftext: string
+    subreddit: string
+    author: string
+    score: number
+  }>
+  voiceProfile: VoiceSummary
+  numberOfTweets: number
+}
+
+export interface GeneratedTweet {
+  text: string
+  sourcePost?: {
+    title: string
+    subreddit: string
+  }
+}
+
+const TWEET_GENERATION_SYSTEM_PROMPT = `You are an expert social media content creator. Your task is to generate engaging Twitter/X posts based on Reddit content while matching a specific voice profile.
+
+RULES:
+1. Generate EXACTLY the number of tweets requested
+2. Each tweet must be under 280 characters
+3. Match the provided voice profile exactly (tone, style, emoji usage, hashtag frequency, etc.)
+4. Use the Reddit post content as inspiration but create original tweets
+5. Include the subreddit context naturally if relevant
+6. Make tweets engaging and likely to generate discussion
+7. Avoid controversial or sensitive topics
+8. Return ONLY a JSON array of tweet objects, no markdown or explanations
+
+Response format:
+[
+  {
+    "text": "Your tweet text here",
+    "sourcePost": {
+      "title": "Reddit post title",
+      "subreddit": "subreddit_name"
+    }
+  }
+]`
+
+/** Generate tweets from Reddit posts using user's voice profile */
+export async function generateTweets(input: GenerateTweetsInput): Promise<GeneratedTweet[]> {
+  const model = getModel()
+
+  if (!model) {
+    console.warn('GEMINI_API_KEY missing; generateTweets returning empty array.')
+    return []
+  }
+
+  // Prepare Reddit content
+  const redditContent = input.redditPosts
+    .filter(post => post.selftext && post.selftext.trim().length > 0)
+    .map(post => `
+**r/${post.subreddit}** - "${post.title}"
+Content: ${post.selftext.slice(0, 500)}${post.selftext.length > 500 ? '...' : ''}
+Score: ${post.score} | Author: ${post.author}
+---`)
+    .join('\n')
+
+  // Prepare voice profile summary
+  const voiceContext = `
+VOICE PROFILE:
+- Tone: ${input.voiceProfile.tone}
+- Average tweet length: ${input.voiceProfile.cadence.avgChars} characters
+- Sentences per tweet: ${input.voiceProfile.cadence.sentences}
+- Question rate: ${(input.voiceProfile.cadence.questionRate * 100).toFixed(0)}%
+- Exclamation rate: ${(input.voiceProfile.cadence.exclaimRate * 100).toFixed(0)}%
+- Emojis: ${input.voiceProfile.emoji.allowed ? `Max ${input.voiceProfile.emoji.maxPerTweet} per tweet, position: ${input.voiceProfile.emoji.position || 'any'}` : 'Not allowed'}
+- Hashtags: ${input.voiceProfile.hashtags.frequency} frequency, position: ${input.voiceProfile.hashtags.position || 'any'}
+- Preferred words: ${input.voiceProfile.lexicon.prefer.slice(0, 10).join(', ')}
+- Words to avoid: ${input.voiceProfile.lexicon.avoid.slice(0, 10).join(', ')}
+- Topics of interest: ${input.voiceProfile.topics.join(', ')}
+- Engagement style: ${input.voiceProfile.engagementHints.slice(0, 3).join(', ')}
+`
+
+  const prompt = `${TWEET_GENERATION_SYSTEM_PROMPT}
+
+${voiceContext}
+
+REDDIT CONTENT:
+${redditContent}
+
+Generate exactly ${input.numberOfTweets} tweet(s) based on this content and voice profile.`
+
+  try {
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7, // More creative for content generation
+        maxOutputTokens: 1000,
+      },
+    })
+
+    const rawText = result.response.text()
+    const parsed = extractJson(rawText) as GeneratedTweet[]
+    
+    if (!Array.isArray(parsed)) {
+      throw new Error('Generated content is not an array')
+    }
+
+    // Validate and clean up tweets
+    const validTweets = parsed
+      .filter(tweet => tweet.text && typeof tweet.text === 'string')
+      .map(tweet => ({
+        text: tweet.text.slice(0, 280), // Ensure under character limit
+        sourcePost: tweet.sourcePost || undefined,
+      }))
+      .slice(0, input.numberOfTweets) // Ensure exact count
+
+    return validTweets
+  } catch (err) {
+    console.error('generateTweets: Gemini call failed:', err)
+    return []
+  }
+}

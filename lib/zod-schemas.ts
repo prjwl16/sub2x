@@ -38,8 +38,8 @@ export const DraftStatusFilterSchema = z.object({
 // Post status filter
 export const PostStatusFilterSchema = z.object({
   status: z.enum(['SCHEDULED', 'POSTED', 'FAILED', 'CANCELED', 'SKIPPED']).optional(),
-  from: z.string().datetime().optional(),
-  to: z.string().datetime().optional(),
+  from: z.date().optional().nullable(),
+  to: z.date().optional().nullable(),
 })
 
 // Cancel post schema
