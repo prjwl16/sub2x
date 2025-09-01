@@ -215,9 +215,9 @@ export const posts = {
       })
 
       // TODO: Uncomment when X API is implemented
-      // const tweetResponse = await xClient.postTweet(userId, {
-      //   text: post.draft.text,
-      // })
+      const tweetResponse = await xClient.postTweet(userId, {
+        text: post.draft.text,
+      })
 
       // Update post with external ID and success
       await prisma.scheduledPost.update({
@@ -240,7 +240,6 @@ export const posts = {
       })
 
     } catch (error) {
-      // Update post with error
       await prisma.scheduledPost.update({
         where: { id: postId },
         data: {
