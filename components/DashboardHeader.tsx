@@ -24,22 +24,6 @@ export function DashboardHeader() {
           <div className="flex items-center space-x-4">
             {session && (
               <>
-                <div className="hidden sm:flex items-center space-x-3">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-800">
-                      {session.user.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      @{session.user.handle || "your-handle"}
-                    </p>
-                  </div>
-                </div>
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={session.user.image} alt={session.user.name || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-sm">
-                    {session.user.name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
                 <SignOutButton />
               </>
             )}

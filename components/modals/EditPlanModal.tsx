@@ -1,18 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
+import { usePostingPlan } from "@/hooks/usePostingPlan"
+import type { SchedulePolicy } from "@/types/api"
 
 interface EditPlanModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (data: EditPlanData) => void
-  initialData?: EditPlanData
+  onSave?: (data: Partial<SchedulePolicy>) => void
 }
 
 interface EditPlanData {
@@ -26,25 +27,46 @@ interface EditPlanData {
 export function EditPlanModal({
   open,
   onOpenChange,
-  onSave,
-  initialData = {
+  onSave
+}: EditPlanModalProps) {
+  const { schedule, updateSchedule } = usePostingPlan()
+  const [formData, setFormData] = useState<EditPlanData>({
     postsPerDay: 1,
     time: "09:00",
-    timezone: "IST",
+    timezone: "UTC",
     isActive: true,
     monthlyLimit: 100
-  }
-}: EditPlanModalProps) {
-  const [formData, setFormData] = useState<EditPlanData>(initialData)
+  })
   const [isSaving, setIsSaving] = useState(false)
+
+  // Update form data when schedule data is loaded
+  useEffect(() => {
+    if (schedule) {
+      setFormData({
+        postsPerDay: schedule.postsPerDay,
+        time: schedule.preferredTimes[0] || "09:00",
+        timezone: schedule.timeZone,
+        isActive: schedule.isActive,
+        monthlyLimit: 100 // This might need to come from usage API
+      })
+    }
+  }, [schedule])
 
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      // TODO: Call API to save plan
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      onSave(formData)
+      const scheduleData: Partial<SchedulePolicy> = {
+        postsPerDay: formData.postsPerDay,
+        preferredTimes: [formData.time],
+        timeZone: formData.timezone,
+        isActive: formData.isActive
+      }
+      
+      await updateSchedule(scheduleData)
+      onSave?.(scheduleData)
       onOpenChange(false)
+    } catch (error) {
+      console.error('Failed to save schedule:', error)
     } finally {
       setIsSaving(false)
     }

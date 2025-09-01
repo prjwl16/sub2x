@@ -17,13 +17,6 @@ export default function Dashboard() {
   const { toasts, addToast, removeToast } = useToast()
   const [editPlanOpen, setEditPlanOpen] = useState(false)
   const [previewDrawerOpen, setPreviewDrawerOpen] = useState(false)
-  const [planData, setPlanData] = useState({
-    monthlyLimit: 100,
-    postsThisMonth: 23,
-    schedule: "1/day at 9:00 AM",
-    timezone: "IST",
-    isActive: true
-  })
 
   if (!session) {
     return (
@@ -33,20 +26,6 @@ export default function Dashboard() {
         </div>
       </div>
     )
-  }
-
-  const handleEditPlan = (data: any) => {
-    setPlanData(prev => ({
-      ...prev,
-      monthlyLimit: data.monthlyLimit,
-      schedule: `${data.postsPerDay}/day at ${data.time}`,
-      timezone: data.timezone,
-      isActive: data.isActive
-    }))
-  }
-
-  const handleToggleActive = (active: boolean) => {
-    setPlanData(prev => ({ ...prev, isActive: active }))
   }
 
   const handleReorderCommunities = (communities: any[]) => {
@@ -82,20 +61,14 @@ export default function Dashboard() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ConnectedAccountCard 
+          {/* <ConnectedAccountCard 
             handle={session.user.handle}
             isConnected={true}
             expiresAt={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}
-          />
+          /> */}
           
           <PostingPlanCard
-            monthlyLimit={planData.monthlyLimit}
-            postsThisMonth={planData.postsThisMonth}
-            schedule={planData.schedule}
-            timezone={planData.timezone}
-            isActive={planData.isActive}
             onEditPlan={() => setEditPlanOpen(true)}
-            onToggleActive={handleToggleActive}
           />
           
           <CommunitiesCard
@@ -114,14 +87,6 @@ export default function Dashboard() {
       <EditPlanModal
         open={editPlanOpen}
         onOpenChange={setEditPlanOpen}
-        onSave={handleEditPlan}
-        initialData={{
-          postsPerDay: 1,
-          time: "09:00",
-          timezone: "IST",
-          isActive: true,
-          monthlyLimit: 100
-        }}
       />
 
       <PreviewTweetDrawer
