@@ -1,5 +1,4 @@
-// External AI service client - STUB IMPLEMENTATION
-// TODO: Integrate with actual AI service (OpenAI, Anthropic, etc.)
+
 
 export interface VoiceProfile {
   rules: string[]

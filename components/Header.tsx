@@ -8,8 +8,12 @@ import { usePathname } from "next/navigation"
 
 export function Header() {
   const { data: session } = useSession()
-
   const pathname = usePathname()
+
+  // Only show header on base path (/) and not on dashboard
+  if (pathname === "/dashboard") {
+    return null
+  }
 
   return (
     <header className="w-full border-b border-white/20 backdrop-blur-md bg-white/10 sticky top-0 z-50">
@@ -30,18 +34,16 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Auth Button */}
+          {/* Auth Section */}
           <div className="flex items-center">
-            {/* if already on dashboard, then show signout button */}
             {session ? (
               <div className="flex items-center space-x-4">
-                {pathname === "/dashboard" ? (
-                  <SignOutButton />
-                ) : (
-                  <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-md hover:border hover:border-gray-800">
-                    Dashboard
-                  </Link>
-                )}
+                <Link 
+                  href="/dashboard" 
+                  className="text-sm text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-md hover:border hover:border-gray-800"
+                >
+                  Dashboard
+                </Link>
               </div>
             ) : (
               <SignInButton />

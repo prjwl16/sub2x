@@ -1,6 +1,7 @@
 // lib/auth.ts
 import { NextAuthOptions } from "next-auth";
 import TwitterProvider from "next-auth/providers/twitter";
+import { prisma } from "./db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -34,6 +35,71 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "twitter" && account?.access_token) {
+        try {
+          // Check if user already exists in our database
+          const existingUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: {
+              accounts: {
+                where: { provider: "X" },
+              },
+            },
+          });
+
+          if (!existingUser) {
+            // Create new user in our database
+            await prisma.user.create({
+              data: {
+                id: user.id,
+                name: user.name,
+                image: user.image,
+                handle: (user as any).username,
+              },
+            });
+          }
+
+          // Upsert the social account with the access token
+          await prisma.socialAccount.upsert({
+            where: {
+              provider_providerAccountId: {
+                provider: "X",
+                providerAccountId: account.providerAccountId,
+              },
+            },
+            update: {
+              accessToken: account.access_token,
+              refreshToken: account.refresh_token,
+              scope: account.scope,
+              tokenType: account.token_type,
+              expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              username: (user as any).username,
+              displayName: user.name,
+            },
+            create: {
+              userId: user.id,
+              provider: "X",
+              providerAccountId: account.providerAccountId,
+              accessToken: account.access_token,
+              refreshToken: account.refresh_token,
+              scope: account.scope,
+              tokenType: account.token_type,
+              expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              username: (user as any).username,
+              displayName: user.name,
+            },
+          });
+
+          return true;
+        } catch (error) {
+          console.error("Error during sign in:", error);
+          return false;
+        }
+      }
+      return true;
+    },
+
     async jwt({ token, user, account, profile }) {
       // On first sign-in, `user` is present (your mapped object).
       if (user) {

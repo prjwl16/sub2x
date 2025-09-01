@@ -110,4 +110,60 @@ export const sources = {
       where: { id },
     })
   },
+
+  async reorder(
+    userId: string,
+    items: Array<{ id: string; priority: number }>
+  ): Promise<Array<{ id: string; subreddit: { name: string; title: string | null }; priority: number }>> {
+    // First, verify all items belong to the user
+    const userSubredditIds = items.map(item => item.id)
+    const existingItems = await prisma.userSubreddit.findMany({
+      where: {
+        id: { in: userSubredditIds },
+        userId,
+      },
+      select: { id: true },
+    })
+
+    if (existingItems.length !== userSubredditIds.length) {
+      throw new ApiError(403, 'FORBIDDEN', 'One or more sources do not belong to the authenticated user')
+    }
+
+    // Update priorities in a transaction
+    const updatedItems = await prisma.$transaction(async (tx) => {
+      const updates = items.map(item =>
+        tx.userSubreddit.update({
+          where: { id: item.id },
+          data: { priority: item.priority },
+          include: {
+            subreddit: {
+              select: {
+                name: true,
+                title: true,
+              },
+            },
+          },
+        })
+      )
+
+      return Promise.all(updates)
+    })
+
+    // Return ordered by priority ASC, updatedAt DESC
+    return updatedItems
+      .sort((a, b) => {
+        if (a.priority !== b.priority) {
+          return a.priority - b.priority
+        }
+        return b.updatedAt.getTime() - a.updatedAt.getTime()
+      })
+      .map(item => ({
+        id: item.id,
+        subreddit: {
+          name: item.subreddit.name,
+          title: item.subreddit.title,
+        },
+        priority: item.priority,
+      }))
+  },
 }

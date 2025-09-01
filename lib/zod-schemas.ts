@@ -57,3 +57,21 @@ export const DateRangeSchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
 })
+
+// Reorder sources schema
+export const ReorderSourcesSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().cuid(),
+      priority: z.number().int(),
+    })
+  ).min(1).max(200).refine(
+    (items) => {
+      const ids = items.map(item => item.id)
+      return new Set(ids).size === ids.length
+    },
+    {
+      message: 'All IDs must be unique',
+    }
+  ),
+})
