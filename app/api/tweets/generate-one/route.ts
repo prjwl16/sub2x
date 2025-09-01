@@ -82,7 +82,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateT
     }
 
     // Generate single tweet using Gemini
-    const voiceProfile: VoiceSummary = user.voiceProfile.rules
+    if (!user.voiceProfile.rules) {
+      return NextResponse.json(
+        { success: false, error: 'Voice profile rules not found', code: 'VOICE_PROFILE_INVALID' },
+        { status: 400 }
+      )
+    }
+    
+    // Type assertion with proper conversion
+    const voiceProfile: VoiceSummary = user.voiceProfile.rules as unknown as VoiceSummary
     const generatedTweets = await generateTweets({
       redditPosts: redditPosts.map(post => ({
         title: post.title,
@@ -164,7 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateT
     if (error instanceof ApiError) {
       return NextResponse.json(
         { success: false, error: error.message, code: error.code },
-        { status: error.statusCode }
+        { status: error.status }
       )
     }
     

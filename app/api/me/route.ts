@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/guards'
 import { errorToResponse } from '@/lib/errors'
 import { UpdateMeSchema } from '@/lib/zod-schemas'
 import { prisma } from '@/lib/db'
-import type { ApiSuccess, MeResponse } from '@/types/api'
+import type { ApiSuccess, MeResponse, UserProfile } from '@/types/api'
 
 // GET /api/me - Get current user profile + connected X account + usage
 export async function GET(): Promise<NextResponse> {
@@ -70,10 +70,15 @@ export async function GET(): Promise<NextResponse> {
     const response: ApiSuccess<MeResponse> = {
       ok: true,
       data: {
-        user,
+        user: {
+          ...user,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        },
         account: account ? {
           ...account,
           provider: account.provider.toString(),
+          expiresAt: account.expiresAt?.toISOString() || null,
         } : null,
         usage: usage || {
           postsAllotted: 100,
@@ -110,9 +115,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     })
 
-    const response: ApiSuccess<typeof updatedUser> = {
+    const response: ApiSuccess<UserProfile> = {
       ok: true,
-      data: updatedUser,
+      data: {
+        ...updatedUser,
+        createdAt: updatedUser.createdAt.toISOString(),
+        updatedAt: updatedUser.updatedAt.toISOString(),
+      },
     }
 
     return NextResponse.json(response)

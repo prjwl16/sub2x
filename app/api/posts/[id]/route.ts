@@ -23,7 +23,7 @@ interface PostActionResponse {
 // POST /api/posts/[id] - Perform actions on a post or draft
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<PostActionResponse>> {
   try {
     const session = await getServerSession(authOptions)
@@ -36,7 +36,7 @@ export async function POST(
     }
 
     const userId = (session.user as any).id as string
-    const { id } = params
+    const { id } = await params
     const body: PostActionRequest = await request.json()
 
     if (!body.action) {

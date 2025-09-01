@@ -99,7 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateT
     if (error instanceof ApiError) {
       return NextResponse.json(
         { success: false, error: error.message, code: error.code },
-        { status: error.statusCode }
+        { status: error.status }
       )
     }
     
@@ -177,7 +177,7 @@ async function generateTweetsForUser(user: any, tweetsNeeded: number) {
     }
 
     // Generate tweets using Gemini
-    const voiceProfile: VoiceSummary = user.voiceProfile.rules
+    const voiceProfile: VoiceSummary = user.voiceProfile.rules as unknown as VoiceSummary
     const generatedTweets = await generateTweets({
       redditPosts: redditPosts.map(post => ({
         title: post.title,

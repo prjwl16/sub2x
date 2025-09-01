@@ -33,8 +33,8 @@ export const sources = {
       nsfw: item.subreddit.nsfw,
       isEnabled: item.isEnabled,
       priority: item.priority,
-      lastUsedAt: item.lastUsedAt,
-      createdAt: item.createdAt,
+      lastUsedAt: item.lastUsedAt?.toISOString() || null,
+      createdAt: item.createdAt.toISOString(),
     }))
 
     return {
@@ -89,8 +89,8 @@ export const sources = {
       nsfw: userSubreddit.subreddit.nsfw,
       isEnabled: userSubreddit.isEnabled,
       priority: userSubreddit.priority,
-      lastUsedAt: userSubreddit.lastUsedAt,
-      createdAt: userSubreddit.createdAt,
+      lastUsedAt: userSubreddit.lastUsedAt?.toISOString() || null,
+      createdAt: userSubreddit.createdAt.toISOString(),
     }
   },
 
@@ -153,8 +153,8 @@ export const sources = {
           nsfw: userSubreddit.subreddit.nsfw,
           isEnabled: userSubreddit.isEnabled,
           priority: userSubreddit.priority,
-          lastUsedAt: userSubreddit.lastUsedAt,
-          createdAt: userSubreddit.createdAt,
+          lastUsedAt: userSubreddit.lastUsedAt?.toISOString() || null,
+          createdAt: userSubreddit.createdAt.toISOString(),
         })
       }
       return added

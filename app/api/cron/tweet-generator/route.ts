@@ -18,7 +18,7 @@ export async function GET() {
     if (error instanceof ApiError) {
       return NextResponse.json(
         { success: false, error: error.message, code: error.code },
-        { status: error.statusCode }
+        { status: error.status }
       )
     }
     
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof ApiError) {
       return NextResponse.json(
         { success: false, error: error.message, code: error.code },
-        { status: error.statusCode }
+        { status: error.status }
       )
     }
     

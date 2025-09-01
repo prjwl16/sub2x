@@ -19,6 +19,7 @@ export const accounts = {
     return accounts.map(account => ({
       ...account,
       provider: account.provider.toString(),
+      expiresAt: account.expiresAt?.toISOString() || null,
     }))
   },
 

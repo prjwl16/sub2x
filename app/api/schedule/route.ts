@@ -23,8 +23,8 @@ export async function GET(): Promise<NextResponse> {
       windowEnd: null,
       nextRunAt: null,
       isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
 
     const response: ApiSuccess<SchedulePolicy> = {

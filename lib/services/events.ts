@@ -38,7 +38,7 @@ export const events = {
       type: event.type.toString(),
       message: event.message,
       data: event.data,
-      createdAt: event.createdAt,
+      createdAt: event.createdAt.toISOString(),
     }))
 
     return {

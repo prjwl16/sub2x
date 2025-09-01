@@ -19,10 +19,10 @@ export const schedule = {
       daysOfWeek: policy.daysOfWeek.map(day => day.toString()),
       windowStart: policy.windowStart,
       windowEnd: policy.windowEnd,
-      nextRunAt: policy.nextRunAt,
+      nextRunAt: policy.nextRunAt?.toISOString() || null,
       isActive: policy.isActive,
-      createdAt: policy.createdAt,
-      updatedAt: policy.updatedAt,
+      createdAt: policy.createdAt.toISOString(),
+      updatedAt: policy.updatedAt.toISOString(),
     }
   },
 
@@ -70,10 +70,10 @@ export const schedule = {
       daysOfWeek: policy.daysOfWeek.map(day => day.toString()),
       windowStart: policy.windowStart,
       windowEnd: policy.windowEnd,
-      nextRunAt: policy.nextRunAt,
+      nextRunAt: policy.nextRunAt?.toISOString() || null,
       isActive: policy.isActive,
-      createdAt: policy.createdAt,
-      updatedAt: policy.updatedAt,
+      createdAt: policy.createdAt.toISOString(),
+      updatedAt: policy.updatedAt.toISOString(),
     }
   },
 }
