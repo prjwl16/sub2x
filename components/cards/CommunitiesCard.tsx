@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Users, Plus, GripVertical, Settings, Loader2, RefreshCw } from "lucide-react"
+import { Users, Plus, Settings, Loader2, RefreshCw, ExternalLink } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { AddSubredditsModal } from "@/components/modals/AddSubredditsModal"
 
@@ -31,7 +30,6 @@ export function CommunitiesCard({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [draggedItem, setDraggedItem] = useState<string | null>(null)
   const [localCommunities, setLocalCommunities] = useState<Community[]>([])
 
   // Load communities from API
@@ -80,36 +78,6 @@ export function CommunitiesCard({
   const existingSubredditNames = communities.map(c => 
     c.name.replace(/^r\//, '').toLowerCase()
   )
-
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDraggedItem(id)
-    e.dataTransfer.effectAllowed = "move"
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-  }
-
-  const handleDrop = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault()
-    if (!draggedItem || draggedItem === targetId) return
-
-    const draggedIndex = localCommunities.findIndex(c => c.id === draggedItem)
-    const targetIndex = localCommunities.findIndex(c => c.id === targetId)
-    
-    const newCommunities = [...localCommunities]
-    const [draggedCommunity] = newCommunities.splice(draggedIndex, 1)
-    newCommunities.splice(targetIndex, 0, draggedCommunity)
-    
-    setLocalCommunities(newCommunities)
-    onReorder?.(newCommunities)
-    setDraggedItem(null)
-  }
-
-  const handleDragEnd = () => {
-    setDraggedItem(null)
-  }
 
   return (
     <>
@@ -192,56 +160,60 @@ export function CommunitiesCard({
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {localCommunities.map((community) => (
-                <div
-                  key={community.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, community.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, community.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`
-                    flex items-center space-x-3 p-3 rounded-lg border border-gray-200 
-                    hover:bg-gray-50 transition-colors cursor-move group
-                    ${draggedItem === community.id ? 'opacity-50' : ''}
-                  `}
-                >
-                  <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0 group-hover:text-gray-600" />
-                  <div className="flex items-center space-x-2 flex-1">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-800">
-                        {community.name}
-                      </span>
-                      {community.title && (
-                        <span className="text-xs text-gray-500 truncate max-w-[200px]">
-                          {community.title}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {community.nsfw && (
-                      <Badge variant="destructive" className="text-xs">
-                        NSFW
-                      </Badge>
-                    )}
-                    <Badge 
-                      variant={community.isActive ? "default" : "secondary"}
-                      className={community.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {localCommunities.slice(0, 10).map((community) => (
+                  <div
+                    key={community.id}
+                    className={`
+                      inline-flex items-center px-4 py-2 dark:px-2 rounded-full border text-sm transition-all select-none shrink-0 whitespace-nowrap group
+                      ${community.isActive 
+                        ? 'border-black bg-white text-black shadow-sm' 
+                        : 'border-gray-300 bg-gradient-to-br from-white to-gray-50 text-gray-700'
+                      }
+                    `}
+                  >
+                    <button
+                      onClick={() => window.open(community.url, '_blank')}
+                      className={`
+                        flex items-center justify-center w-4 h-4 rounded-full transition-colors hover:scale-105
+                        ${community.isActive 
+                          ? 'hover:bg-gray-100' 
+                          : 'hover:bg-gray-200'
+                        }
+                      `}
+                      title={`Open ${community.name} in new tab`}
                     >
-                      {community.isActive ? "Active" : "Inactive"}
-                    </Badge>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                    <span className={`h-2.5 w-2.5 rounded-full ${community.isActive ? 'bg-white' : 'border border-current opacity-50'}`} />
+                    <span className="font-medium truncate max-w-[12rem]">
+                      {community.name}
+                    </span>
+                    {community.nsfw && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${community.isActive ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600'}`}>
+                        NSFW
+                      </span>
+                    )}
                   </div>
+                ))}
+              </div>
+              
+              {localCommunities.length > 10 && (
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 mb-2">
+                    Showing 10 of {localCommunities.length} communities
+                  </p>
+                  <Button
+                    onClick={onManage}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    View all communities
+                  </Button>
                 </div>
-              ))}
-            </div>
-          )}
-          
-          {localCommunities.length > 0 && (
-            <div className="text-xs text-gray-500 text-center pt-2">
-              Drag to reorder communities
+              )}
             </div>
           )}
         </CardContent>
