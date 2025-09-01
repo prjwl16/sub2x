@@ -111,6 +111,58 @@ export const sources = {
     })
   },
 
+  async addBatch(userId: string, names: string[]): Promise<SourceItem[]> {
+    const results = await prisma.$transaction(async (tx) => {
+      const added = []
+      for (const nameRaw of names) {
+        const name = nameRaw.replace(/^r\//, '').trim().toLowerCase()
+        if (!name) continue
+        
+        // Check if user already has this subreddit
+        const existing = await tx.userSubreddit.findFirst({
+          where: {
+            userId,
+            subreddit: { name }
+          }
+        })
+        
+        if (existing) continue // Skip if already exists
+        
+        const subreddit = await tx.subreddit.upsert({
+          where: { name },
+          update: {},
+          create: { name },
+        })
+        
+        const userSubreddit = await tx.userSubreddit.create({
+          data: {
+            userId,
+            subredditId: subreddit.id,
+            isEnabled: true,
+            priority: 0
+          },
+          include: {
+            subreddit: true
+          }
+        })
+        
+        added.push({
+          id: userSubreddit.id,
+          name: userSubreddit.subreddit.name,
+          title: userSubreddit.subreddit.title,
+          nsfw: userSubreddit.subreddit.nsfw,
+          isEnabled: userSubreddit.isEnabled,
+          priority: userSubreddit.priority,
+          lastUsedAt: userSubreddit.lastUsedAt,
+          createdAt: userSubreddit.createdAt,
+        })
+      }
+      return added
+    })
+
+    return results
+  },
+
   async reorder(
     userId: string,
     items: Array<{ id: string; priority: number }>

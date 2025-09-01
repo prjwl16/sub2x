@@ -2,6 +2,7 @@
 import { NextAuthOptions } from "next-auth";
 import TwitterProvider from "next-auth/providers/twitter";
 import { prisma } from "./db";
+import { processUserFirstLogin } from "./onboarding";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -91,6 +92,14 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
+          // Fire-and-forget onboarding (do not block sign-in)
+          if (user?.id) {
+            console.log('[auth] onboarding', (user as any).id)
+            // Run in next tick to avoid blocking sign-in
+            Promise.resolve().then(() => {
+              processUserFirstLogin((user as any).id as string).catch((err) => console.error('[auth] onboarding error', err))
+            })
+          }
           return true;
         } catch (error) {
           console.error("Error during sign in:", error);

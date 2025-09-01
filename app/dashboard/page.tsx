@@ -28,10 +28,20 @@ export default function Dashboard() {
     )
   }
 
-  const handleReorderCommunities = (communities: any[]) => {
-    // TODO: Call API to reorder communities
-    console.log("Reordered communities:", communities)
-    addToast("Communities reordered successfully!", "success")
+  const handleReorderCommunities = async (communities: any[]) => {
+    try {
+      // TODO: Call API to reorder communities
+      console.log("Reordered communities:", communities)
+      addToast("Communities reordered successfully!", "success")
+    } catch (error) {
+      addToast("Failed to reorder communities", "error")
+    }
+  }
+
+  const handleManageCommunities = () => {
+    // TODO: Open manage communities modal/page
+    console.log("Manage communities")
+    addToast("Manage communities feature coming soon!", "info")
   }
 
   return (
@@ -73,8 +83,7 @@ export default function Dashboard() {
           
           <CommunitiesCard
             onReorder={handleReorderCommunities}
-            onAdd={() => console.log("Add community")}
-            onManage={() => console.log("Manage communities")}
+            onManage={handleManageCommunities}
           />
           
           <StatusCard
