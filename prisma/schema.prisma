@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SocialProvider {
+  X
+  REDDIT
+}
+
+enum SourceProvider {
+  REDDIT
+  MANUAL
+}
+
+enum DraftStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  SCHEDULED
+  POSTED
+}
+
+enum PostStatus {
+  SCHEDULED
+  POSTED
+  FAILED
+  CANCELED
+  SKIPPED
+}
+
+enum PostEventType {
+  ENQUEUED
+  BUILD_PAYLOAD
+  ATTEMPT
+  SUCCESS
+  FAILURE
+  CANCEL
+}
+
+enum DayOfWeek {
+  SUN
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+}
+
+model User {
+  id            String            @id @default(cuid())
+  email         String?           @unique
+  name          String?
+  image         String?
+  handle        String?
+
+  accounts      SocialAccount[]
+  voiceProfile  VoiceProfile?
+  sources       UserSubreddit[]
+  drafts        Draft[]
+  schedule      SchedulePolicy?
+  queue         ScheduledPost[]
+  usage         MonthlyUsage[]
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([email])
+}
+
+model SocialAccount {
+  id                 String        @id @default(cuid())
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider           SocialProvider
+  providerAccountId  String
+
+  username           String?
+  displayName        String?
+
+  accessToken        String?
+  refreshToken       String?
+  scope              String?
+  tokenType          String?
+  expiresAt          DateTime?
+
+  data               Json?
+
+  scheduledPosts     ScheduledPost[]
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Subreddit {
+  id           String           @id @default(cuid())
+  name         String           @unique
+  title        String?
+  nsfw         Boolean          @default(false)
+
+  followers    UserSubreddit[]
+  items        SourceItem[]
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([name])
+}
+
+model UserSubreddit {
+  id           String     @id @default(cuid())
+  userId       String
+  subredditId  String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subreddit    Subreddit  @relation(fields: [subredditId], references: [id], onDelete: Cascade)
+
+  isEnabled    Boolean    @default(true)
+  priority     Int        @default(0)
+  lastUsedAt   DateTime?
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, subredditId])
+  @@index([userId])
+  @@index([subredditId])
+}
+
+model SourceItem {
+  id             String          @id @default(cuid())
+  provider       SourceProvider  @default(REDDIT)
+
+  externalId     String?
+  url            String?
+  title          String?
+  author         String?
+  subredditId    String?
+  subreddit      Subreddit?      @relation(fields: [subredditId], references: [id], onDelete: SetNull)
+
+  summary        String?
+  content        Json?
+  score          Int?
+  commentsCount  Int?
+
+  fetchedAt      DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  drafts         Draft[]
+
+  @@unique([provider, externalId])
+  @@index([subredditId])
+}
+
+model Draft {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sourceItemId  String?
+  sourceItem    SourceItem?   @relation(fields: [sourceItemId], references: [id], onDelete: SetNull)
+
+  text          String
+  status        DraftStatus   @default(DRAFT)
+  score         Float?
+  meta          Json?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  scheduled     ScheduledPost[]
+
+  @@index([userId, status])
+}
+
+model SchedulePolicy {
+  id            String        @id @default(cuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  timeZone      String        @default("UTC")
+  postsPerDay   Int           @default(1)
+  preferredTimes String[]     // e.g., ["09:00", "18:00"]
+  daysOfWeek    DayOfWeek[]
+  windowStart   Int?
+  windowEnd     Int?
+
+  nextRunAt     DateTime?
+  isActive      Boolean       @default(true)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model ScheduledPost {
+  id               String          @id @default(cuid())
+
+  userId           String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  socialAccountId  String
+  socialAccount    SocialAccount   @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  draftId          String?
+  draft            Draft?          @relation(fields: [draftId], references: [id], onDelete: SetNull)
+
+  status           PostStatus      @default(SCHEDULED)
+  scheduledFor     DateTime
+  lockedAt         DateTime?
+  postedAt         DateTime?
+
+  externalPostId   String?
+  error            String?
+  attemptCount     Int             @default(0)
+  payload          Json?
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  events           PostEvent[]
+
+  @@index([status, scheduledFor])
+  @@index([userId, scheduledFor])
+  @@unique([socialAccountId, externalPostId])
+}
+
+model PostEvent {
+  id               String         @id @default(cuid())
+  scheduledPostId  String
+  scheduledPost    ScheduledPost  @relation(fields: [scheduledPostId], references: [id], onDelete: Cascade)
+
+  type             PostEventType
+  message          String?
+  data             Json?
+
+  createdAt        DateTime       @default(now())
+
+  @@index([scheduledPostId])
+}
+
+model MonthlyUsage {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  year           Int
+  month          Int
+
+  postsAllotted  Int      @default(100)
+  postsScheduled Int      @default(0)
+  postsPosted    Int      @default(0)
+
+  resetAt        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, year, month])
+  @@index([userId, year, month])
+}
+
+model VoiceProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rules      Json
+  examples   Json?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CronLock {
+  key        String   @id
+  owner      String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

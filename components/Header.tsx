@@ -31,9 +31,6 @@ export function Header() {
           <div className="flex items-center">
             {session ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
-                  @{session.user.handle || session.user.name}
-                </span>
                 <SignOutButton />
               </div>
             ) : (
