@@ -2,7 +2,6 @@
 
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Bird, X, XIcon } from "lucide-react"
 import Image from "next/image"
 
 export function SignInButton() {

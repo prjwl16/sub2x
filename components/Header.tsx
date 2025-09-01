@@ -4,9 +4,12 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { SignInButton } from "./SignInButton"
 import { SignOutButton } from "./SignOutButton"
+import { usePathname } from "next/navigation"
 
 export function Header() {
   const { data: session } = useSession()
+
+  const pathname = usePathname()
 
   return (
     <header className="w-full border-b border-white/20 backdrop-blur-md bg-white/10 sticky top-0 z-50">
@@ -29,9 +32,16 @@ export function Header() {
 
           {/* Auth Button */}
           <div className="flex items-center">
+            {/* if already on dashboard, then show signout button */}
             {session ? (
               <div className="flex items-center space-x-4">
-                <SignOutButton />
+                {pathname === "/dashboard" ? (
+                  <SignOutButton />
+                ) : (
+                  <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-md hover:border hover:border-gray-800">
+                    Dashboard
+                  </Link>
+                )}
               </div>
             ) : (
               <SignInButton />

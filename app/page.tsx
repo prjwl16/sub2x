@@ -1,10 +1,14 @@
+"use client"
 import { SignInButton } from "@/components/SignInButton";
 import { FeatureCard } from "@/components/FeatureCard";
-import { GlassCard } from "@/components/GlassCard";
 import { FancyArrowFlow } from "@/components/FancyArrowFlow";
-import { Target, Zap, TrendingUp, Snowflake } from "lucide-react";
+import { Target, Zap, TrendingUp, Snowflake, Link } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export default function Home() {
+  const { data: session } = useSession()
+
   return (
     <div className="w-full">
       {/* Hero Section */}
