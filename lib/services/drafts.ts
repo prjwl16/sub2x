@@ -6,55 +6,60 @@ import type { PaginationMeta } from '../pagination'
 export const drafts = {
   async list(
     userId: string,
-    filter: { status?: string },
+    filter: { status?: string | null },
     pagination: { offset: number; limit: number }
   ): Promise<{ items: DraftItem[]; meta: PaginationMeta }> {
-    const where: any = { userId }
-    if (filter.status) {
-      where.status = filter.status
-    }
+    try {
+      const where: any = { userId }
+      if (filter.status && filter.status !== null) {
+        where.status = filter.status
+      }
 
-    const [items, total] = await Promise.all([
-      prisma.draft.findMany({
-        where,
-        include: {
-          sourceItem: {
-            include: {
-              subreddit: true,
+      const [items, total] = await Promise.all([
+        prisma.draft.findMany({
+          where,
+          include: {
+            sourceItem: {
+              include: {
+                subreddit: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: pagination.offset,
-        take: pagination.limit,
-      }),
-      prisma.draft.count({ where }),
-    ])
+          orderBy: { createdAt: 'desc' },
+          skip: pagination.offset,
+          take: pagination.limit,
+        }),
+        prisma.draft.count({ where }),
+      ])
 
-    const draftItems: DraftItem[] = items.map(draft => ({
-      id: draft.id,
-      text: draft.text,
-      status: draft.status.toString(),
-      score: draft.score,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-      sourceItem: draft.sourceItem ? {
-        id: draft.sourceItem.id,
-        title: draft.sourceItem.title,
-        url: draft.sourceItem.url,
-        subreddit: draft.sourceItem.subreddit ? {
-          name: draft.sourceItem.subreddit.name,
+          const draftItems: DraftItem[] = items.map(draft => ({
+        id: draft.id,
+        text: draft.text,
+        status: draft.status,
+        score: draft.score,
+        createdAt: draft.createdAt.toISOString(),
+        updatedAt: draft.updatedAt.toISOString(),
+        sourceItem: draft.sourceItem ? {
+          id: draft.sourceItem.id,
+          title: draft.sourceItem.title,
+          url: draft.sourceItem.url,
+          subreddit: draft.sourceItem.subreddit ? {
+            name: draft.sourceItem.subreddit.name,
+          } : null,
         } : null,
-      } : null,
-    }))
+      }))
 
-    return {
-      items: draftItems,
-      meta: {
-        total,
-        offset: pagination.offset,
-        limit: pagination.limit,
-      },
+      return {
+        items: draftItems,
+        meta: {
+          total,
+          offset: pagination.offset,
+          limit: pagination.limit,
+        },
+      }
+    } catch (error) {
+      console.error('Error in drafts.list:', error)
+      throw error
     }
   },
 

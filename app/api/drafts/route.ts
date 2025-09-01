@@ -26,6 +26,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(response)
   } catch (error) {
+    console.error('Error in drafts API:', error)
     return errorToResponse(error)
   }
 }

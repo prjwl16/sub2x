@@ -1,28 +1,54 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {  Activity, Plus, Calendar, Hash } from "lucide-react"
-import { useState, useEffect } from "react"
-import type { PostItem, UsageSummary } from "@/types/api"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Calendar, Hash, Loader2, CheckCircle, AlertCircle, Send, ChevronLeft, ChevronRight, Eye } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
+import type { PostItem, UsageSummary, DraftItem } from "@/types/api"
+
+interface GenerateSingleTweetResponse {
+  success: boolean
+  data?: {
+    draft: DraftItem
+  }
+  error?: string
+  code?: string
+}
 
 interface StatusCardProps {}
 
 export function StatusCard({}: StatusCardProps) {
+  const [drafts, setDrafts] = useState<DraftItem[]>([])
   const [upcomingTweets, setUpcomingTweets] = useState<PostItem[]>([])
   const [usage, setUsage] = useState<UsageSummary | null>(null)
   const [lastPostedTweet, setLastPostedTweet] = useState<PostItem | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+  const [generateSuccess, setGenerateSuccess] = useState<string | null>(null)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [actioningIds, setActioningIds] = useState<Set<string>>(new Set())
+  const carouselRef = useRef<HTMLDivElement>(null)
 
+  // Fetch all data on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
+        // Fetch drafts (recent generated tweets)
+        const draftsResponse = await fetch('/api/drafts?status=DRAFT&limit=5')
+        if (draftsResponse.ok) {
+          const draftsData = await draftsResponse.json()
+          setDrafts(draftsData.data || [])
+        }
+
         // Fetch upcoming tweets (scheduled posts)
-        const tweetsResponse = await fetch('/api/posts?status=SCHEDULED&limit=10')
+        const tweetsResponse = await fetch('/api/posts?status=SCHEDULED&limit=5')
         if (tweetsResponse.ok) {
           const tweetsData = await tweetsResponse.json()
           setUpcomingTweets(tweetsData.data || [])
@@ -53,12 +79,116 @@ export function StatusCard({}: StatusCardProps) {
     fetchData()
   }, [])
 
-  const formatRelativeTime = (date: Date) => {
+  // Generate a single tweet
+  const generateSingleTweet = async () => {
+    setIsGenerating(true)
+    setGenerateError(null)
+    setGenerateSuccess(null)
+    
+    try {
+      const response = await fetch('/api/tweets/generate-one', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+      
+      const result: GenerateSingleTweetResponse = await response.json()
+      
+      if (result.success && result.data) {
+        setGenerateSuccess('Generated 1 new tweet!')
+        
+        // Add the new draft to the beginning of the drafts list
+        setDrafts(prev => [result.data!.draft, ...prev])
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => setGenerateSuccess(null), 5000)
+      } else {
+        const errorMessage = getErrorMessage(result.code, result.error)
+        setGenerateError(errorMessage)
+        
+        // Clear error message after 8 seconds
+        setTimeout(() => setGenerateError(null), 8000)
+      }
+    } catch (error) {
+      console.error('Failed to generate tweet:', error)
+      setGenerateError('Something went wrong. Please try again.')
+      setTimeout(() => setGenerateError(null), 8000)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // Handle post actions (post now, approve, reject)
+  const handlePostAction = async (id: string, action: 'post_now' | 'approve' | 'reject') => {
+    setActioningIds(prev => new Set([...prev, id]))
+    
+    try {
+      const response = await fetch(`/api/posts/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      })
+
+      if (response.ok) {
+        // Update local state based on action
+        if (action === 'approve') {
+          setDrafts(prev => prev.map(draft => 
+            draft.id === id ? { ...draft, status: 'POSTED' } : draft
+          ))
+        } else if (action === 'reject') {
+          setDrafts(prev => prev.map(draft => 
+            draft.id === id ? { ...draft, status: 'REJECTED' } : draft
+          ))
+        } else if (action === 'post_now') {
+          setUpcomingTweets(prev => prev.map(tweet => 
+            tweet.id === id ? { ...tweet, status: 'POSTED', postedAt: new Date().toISOString() } : tweet
+          ))
+        }
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to perform action:', errorData)
+      }
+    } catch (error) {
+      console.error('Error performing action:', error)
+    } finally {
+      setActioningIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(id)
+        return newSet
+      })
+    }
+  }
+
+  const getErrorMessage = (code?: string, error?: string): string => {
+    switch (code) {
+      case 'UNAUTHORIZED':
+        return 'Please log in to generate tweets.'
+      case 'VOICE_PROFILE_MISSING':
+        return 'Please complete your onboarding to create a voice profile.'
+      case 'NO_SOURCES':
+        return 'Please add some subreddits to generate content from.'
+      case 'NO_X_ACCOUNT':
+        return 'Please connect your X (Twitter) account first.'
+      case 'NO_REDDIT_CONTENT':
+        return 'No content found from your subreddits. Please try again later.'
+      case 'TWEET_GENERATION_FAILED':
+        return 'Failed to generate tweet. Please try again later.'
+      default:
+        return error || 'An unexpected error occurred.'
+    }
+  }
+
+  const formatRelativeTime = (date: Date | string) => {
     const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    const dateObj = new Date(date)
+    const diffInHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60))
     
     if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+      const diffInMinutes = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60))
       return `${diffInMinutes}m ago`
     } else if (diffInHours < 24) {
       return `${diffInHours}h ago`
@@ -68,9 +198,9 @@ export function StatusCard({}: StatusCardProps) {
     }
   }
 
-  const getTimeUntilNext = (scheduledFor: Date) => {
+  const getTimeUntilNext = (scheduledFor: Date | string) => {
     const now = new Date().getTime()
-    const scheduled = scheduledFor.getTime()
+    const scheduled = new Date(scheduledFor).getTime()
     const timeLeft = scheduled - now
 
     if (timeLeft <= 0) return "Due now"
@@ -85,12 +215,8 @@ export function StatusCard({}: StatusCardProps) {
     }
   }
 
-  const truncateText = (text: string, maxLength: number = 80) => {
-    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text
-  }
-
-  const formatScheduledDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
+  const formatScheduledDate = (date: Date | string) => {
+    return new Date(date).toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric',
       hour: '2-digit',
@@ -98,20 +224,41 @@ export function StatusCard({}: StatusCardProps) {
     })
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'POSTED':
+        return 'bg-green-100 text-green-800'
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800'
+      case 'SCHEDULED':
+        return 'bg-blue-100 text-blue-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  // Navigate carousel
+  const nextSlide = () => {
+    const totalItems = drafts.length + upcomingTweets.length + 1 // +1 for generate card
+    setCurrentSlide(prev => (prev + 1) % totalItems)
+  }
+
+  const prevSlide = () => {
+    const totalItems = drafts.length + upcomingTweets.length + 1
+    setCurrentSlide(prev => (prev - 1 + totalItems) % totalItems)
+  }
+
   if (isLoading) {
     return (
       <Card className="glass-card">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-gray-800">Status</CardTitle>
-            <Activity className="w-5 h-5 text-gray-500" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-6">
           <div className="animate-pulse space-y-3">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
             <div className="h-4 bg-gray-200 rounded"></div>
             <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
           </div>
         </CardContent>
       </Card>
@@ -121,13 +268,7 @@ export function StatusCard({}: StatusCardProps) {
   if (error) {
     return (
       <Card className="glass-card">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-gray-800">Status</CardTitle>
-            <Activity className="w-5 h-5 text-gray-500" />
-          </div>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <p className="text-red-500 text-sm">Error: {error}</p>
         </CardContent>
       </Card>
@@ -136,13 +277,20 @@ export function StatusCard({}: StatusCardProps) {
 
   const nextScheduledTweet = upcomingTweets[0]
   const nextPostTime = nextScheduledTweet?.scheduledFor
+  const allItems = [...drafts, ...upcomingTweets]
 
   return (
     <div className="glass-card p-6 rounded-xl">
       {/* Header Section */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Upcoming Content</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Content Hub</h2>
+          <div className="flex items-center gap-4 mt-2">
+            <Link href="/tweets" className="flex items-center text-sm text-blue-600 hover:text-blue-800">
+              <Eye className="w-4 h-4 mr-1" />
+              View All Tweets
+            </Link>
+          </div>
         </div>
         <div className="flex items-center space-x-6 text-sm">
           <div className="text-center">
@@ -166,82 +314,262 @@ export function StatusCard({}: StatusCardProps) {
         </div>
       </div>
 
-      {/* Main Carousel Section */}
-      <div className="space-y-4">
-        {upcomingTweets.length > 0 ? (
-          <div className="relative">
-            <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 scrollbar-hide">
-              {upcomingTweets.map((tweet, index) => (
-                <div 
-                  key={tweet.id}
-                  className="flex-shrink-0 w-96 snap-start"
-                >
-                  <div className="bg-white/60 backdrop-blur-sm border border-gray-200/60 rounded-xl p-5 hover:shadow-md transition-all duration-200">
-                    {/* Tweet Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-gray-700">
-                          {formatScheduledDate(tweet.scheduledFor)}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                        {getTimeUntilNext(tweet.scheduledFor)}
-                      </span>
-                    </div>
-                    
-                    {/* Tweet Content */}
-                    {tweet.draft && (
-                      <div className="mb-4">
-                        <p className="text-gray-800 leading-relaxed text-base">
-                          {truncateText(tweet.draft.text, 140)}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Tweet Footer */}
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center space-x-2 text-gray-500">
-                        <Hash className="w-4 h-4" />
-                        <span>{tweet.socialAccount.username || 'Unknown'}</span>
-                      </div>
-                      <div className="text-gray-400">
-                        #{index + 1}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+      {/* Success/Error Messages */}
+      {(generateSuccess || generateError) && (
+        <div className="mb-4">
+          {generateSuccess && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-green-700 text-sm font-medium">{generateSuccess}</span>
+              </div>
             </div>
-            
-            {/* Carousel Navigation Dots */}
-            {upcomingTweets.length > 1 && (
-              <div className="flex justify-center space-x-2 mt-4">
-                {upcomingTweets.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                      index === 0 ? 'bg-gray-800' : 'bg-gray-300'
-                    }`}
-                  />
+          )}
+          {generateError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <span className="text-red-700 text-sm">{generateError}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Carousel Section */}
+      <div className="relative">
+        {allItems.length > 0 ? (
+          <>
+            {/* Carousel */}
+            <div className="overflow-hidden">
+              <div 
+                ref={carouselRef}
+                className="flex transition-transform duration-300 ease-in-out"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {/* Draft Cards */}
+                {drafts.map((draft) => (
+                  <div key={`draft-${draft.id}`} className="w-full flex-shrink-0">
+                    <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/60 hover:shadow-md transition-all duration-200">
+                      <CardContent className="p-5 space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                          <Badge className={getStatusColor(draft.status)}>
+                            DRAFT
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            {formatRelativeTime(draft.createdAt)}
+                          </span>
+                        </div>
+                        
+                        {/* Tweet Content - Full Text */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                            {draft.text}
+                          </p>
+                        </div>
+
+                        {/* Source Info */}
+                        {draft.sourceItem && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <Hash className="w-4 h-4" />
+                            <span>r/{draft.sourceItem.subreddit?.name || 'unknown'}</span>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-2 pt-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePostAction(draft.id, 'approve')}
+                            disabled={actioningIds.has(draft.id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            {actioningIds.has(draft.id) ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approve
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handlePostAction(draft.id, 'reject')}
+                            disabled={actioningIds.has(draft.id)}
+                            className="flex-1"
+                          >
+                            {actioningIds.has(draft.id) ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <AlertCircle className="w-4 h-4 mr-1" />
+                                Reject
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 ))}
+
+                {/* Scheduled Tweet Cards */}
+                {upcomingTweets.map((tweet) => (
+                  <div key={`tweet-${tweet.id}`} className="w-full flex-shrink-0">
+                    <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/60 hover:shadow-md transition-all duration-200">
+                      <CardContent className="p-5 space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                          <Badge className={getStatusColor(tweet.status)}>
+                            SCHEDULED
+                          </Badge>
+                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {getTimeUntilNext(tweet.scheduledFor)}
+                          </span>
+                        </div>
+                        
+                        {/* Tweet Content - Full Text */}
+                        {tweet.draft && (
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                              {tweet.draft.text}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Metadata */}
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center space-x-2 text-gray-500">
+                            <Hash className="w-4 h-4" />
+                            <span>{tweet.socialAccount.username || 'Unknown'}</span>
+                          </div>
+                          <span className="text-gray-500">
+                            {formatScheduledDate(tweet.scheduledFor)}
+                          </span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex space-x-2 pt-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePostAction(tweet.id, 'post_now')}
+                            disabled={actioningIds.has(tweet.id)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700"
+                          >
+                            {actioningIds.has(tweet.id) ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4 mr-1" />
+                                Post Now
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+
+                {/* Generate More Card - Always Last */}
+                <div className="w-full flex-shrink-0">
+                  <Card className="bg-white/60 backdrop-blur-sm border border-gray-200/60 hover:shadow-md transition-all duration-200">
+                    <CardContent className="p-5 flex flex-col items-center justify-center min-h-[300px] text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                        <Plus className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Generate More</h3>
+                      <p className="text-gray-600 mb-6 max-w-sm">
+                        Create a new tweet from your curated Reddit sources.
+                      </p>
+                      
+                      <Button
+                        onClick={generateSingleTweet}
+                        disabled={isGenerating}
+                        className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors duration-200"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Generate Tweet
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            {allItems.length > 0 && (
+              <div className="flex items-center justify-between mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={prevSlide}
+                  disabled={allItems.length + 1 <= 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex space-x-2">
+                  {Array.from({ length: allItems.length + 1 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                        index === currentSlide ? 'bg-gray-800' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={nextSlide}
+                  disabled={allItems.length + 1 <= 1}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
             )}
-          </div>
+          </>
         ) : (
+          /* Empty State */
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
               <Plus className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No scheduled content</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No content yet</h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Get started by generating your first tweet from your curated Reddit sources.
             </p>
+            
             <Button
-              className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg transition-colors duration-200"
+              onClick={generateSingleTweet}
+              disabled={isGenerating}
+              className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors duration-200"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Generate Tweet
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Generate Tweet
+                </>
+              )}
             </Button>
           </div>
         )}

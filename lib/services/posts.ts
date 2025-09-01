@@ -10,6 +10,7 @@ export const posts = {
     filter: { status?: string; from?: Date | null; to?: Date | null },
     pagination: { offset: number; limit: number }
   ): Promise<{ items: PostItem[]; meta: PaginationMeta }> {
+    console.log('Listing posts...', userId, filter, pagination)
     const where: any = { userId }
     
     if (filter.status) {
@@ -61,18 +62,18 @@ export const posts = {
 
     const postItems: PostItem[] = items.map(post => ({
       id: post.id,
-      status: post.status.toString(),
-      scheduledFor: post.scheduledFor,
-      postedAt: post.postedAt,
+      status: post.status,
+      scheduledFor: post.scheduledFor.toISOString(),
+      postedAt: post.postedAt?.toISOString() || null,
       externalPostId: post.externalPostId,
       error: post.error,
       attemptCount: post.attemptCount,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
       draft: post.draft,
       socialAccount: {
         ...post.socialAccount,
-        provider: post.socialAccount.provider.toString(),
+        provider: post.socialAccount.provider,
       },
     }))
 
@@ -116,13 +117,13 @@ export const posts = {
     return {
       id: post.id,
       status: post.status.toString(),
-      scheduledFor: post.scheduledFor,
-      postedAt: post.postedAt,
+      scheduledFor: post.scheduledFor.toISOString(),
+      postedAt: post.postedAt?.toISOString() || null,
       externalPostId: post.externalPostId,
       error: post.error,
       attemptCount: post.attemptCount,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
       draft: post.draft,
       socialAccount: {
         ...post.socialAccount,

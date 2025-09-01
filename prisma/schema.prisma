@@ -27,8 +27,10 @@ enum DraftStatus {
 }
 
 enum PostStatus {
+  DRAFT
   SCHEDULED
   POSTED
+  REJECTED
   FAILED
   CANCELED
   SKIPPED

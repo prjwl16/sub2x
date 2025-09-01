@@ -32,7 +32,7 @@ export const ScheduleUpsertSchema = z.object({
 
 // Draft status filter
 export const DraftStatusFilterSchema = z.object({
-  status: z.enum(['DRAFT', 'APPROVED', 'REJECTED', 'SCHEDULED', 'POSTED']).optional(),
+  status: z.enum(['DRAFT', 'APPROVED', 'REJECTED', 'SCHEDULED', 'POSTED']).nullable().optional(),
 })
 
 // Post status filter

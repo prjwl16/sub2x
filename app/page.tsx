@@ -5,6 +5,7 @@ import { FancyArrowFlow } from "@/components/FancyArrowFlow";
 import { Target, Zap, TrendingUp, Snowflake, Link } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { SignOutButton } from "@/components/SignOutButton";
+import { DashboardButton } from "@/components/DashboardButton";
 
 export default function Home() {
   const { data: session } = useSession()
@@ -12,7 +13,7 @@ export default function Home() {
   return (
     <div className="w-full">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center space-y-8">
           <h1 className="text-5xl md:text-7xl font-bold text-gray-800 leading-tight">
             Daily tweets.
@@ -21,13 +22,17 @@ export default function Home() {
               Zero effort.
             </span>
           </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-            Pick your Reddit communities → AI shapes them into authentic tweets → you stay active on X.
+
+          <p className="text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+            → Pick your Reddit communities
+            <br />
+            → AI shapes them into authentic tweets
+            <br />
+            → you stay active on X.
           </p>
 
-          <div className="flex justify-center items-center pt-8">
-            <SignInButton />
+          <div className="flex justify-center items-center pt-8 text-gray-600">
+            {session ? <DashboardButton /> : <SignInButton />}
           </div>
         </div>
       </section>
@@ -82,7 +87,7 @@ export default function Home() {
             Never run out of content ideas. Stay consistent. Grow your audience.
           </p>
           <div className="pt-4">
-            <SignInButton />
+            {session ? <DashboardButton /> : <SignInButton />}
           </div>
         </div>
       </section>

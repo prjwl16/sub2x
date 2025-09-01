@@ -26,8 +26,8 @@ export interface UserProfile {
   name: string | null
   image: string | null
   handle: string | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string // API returns ISO date strings
+  updatedAt: string // API returns ISO date strings
 }
 
 export interface SocialAccountSummary {
@@ -36,7 +36,7 @@ export interface SocialAccountSummary {
   providerAccountId: string
   username: string | null
   displayName: string | null
-  expiresAt: Date | null
+  expiresAt: string | null // API returns ISO date strings
 }
 
 export interface UsageSummary {
@@ -59,18 +59,18 @@ export interface SourceItem {
   nsfw: boolean
   isEnabled: boolean
   priority: number
-  lastUsedAt: Date | null
-  createdAt: Date
+  lastUsedAt: string | null // API returns ISO date strings
+  createdAt: string // API returns ISO date strings
 }
 
 // Draft types
 export interface DraftItem {
   id: string
   text: string
-  status: string
+  status: 'DRAFT' | 'APPROVED' | 'REJECTED' | 'SCHEDULED' | 'POSTED'
   score: number | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string // API returns ISO date strings
+  updatedAt: string // API returns ISO date strings
   sourceItem?: {
     id: string
     title: string | null
@@ -90,23 +90,23 @@ export interface SchedulePolicy {
   daysOfWeek: string[]
   windowStart: number | null
   windowEnd: number | null
-  nextRunAt: Date | null
+  nextRunAt: string | null // API returns ISO date strings
   isActive: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string // API returns ISO date strings
+  updatedAt: string // API returns ISO date strings
 }
 
 // Post types
 export interface PostItem {
   id: string
   status: string
-  scheduledFor: Date
-  postedAt: Date | null
+  scheduledFor: string // API returns ISO date strings
+  postedAt: string | null // API returns ISO date strings
   externalPostId: string | null
   error: string | null
   attemptCount: number
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string // API returns ISO date strings
+  updatedAt: string // API returns ISO date strings
   draft?: {
     id: string
     text: string
@@ -123,5 +123,5 @@ export interface PostEvent {
   type: string
   message: string | null
   data: unknown
-  createdAt: Date
+  createdAt: string // API returns ISO date strings
 }
