@@ -1,5 +1,5 @@
 import Agenda from 'agenda'
-import { prisma } from '../db'
+// // import { prisma } from "../db"
 import { redditClient } from './external/reddit.client'
 import { generateTweets, VoiceSummary } from './gemini.client'
 import { ApiError } from '../errors'
@@ -136,24 +136,28 @@ export class TweetGeneratorCron {
     }
 
     try {
+      // TODO: Re-implement using backend API instead of Prisma
       // Get users who need tweets generated
-      const usersNeedingTweets = await this.getUsersNeedingTweets()
-      console.log(`Found ${usersNeedingTweets.length} users needing tweets`)
+      // const usersNeedingTweets = await this.getUsersNeedingTweets()
+      // console.log(`Found ${usersNeedingTweets.length} users needing tweets`)
 
-      for (const user of usersNeedingTweets) {
-        try {
-          await this.generateTweetsForUser(user)
-          stats.usersProcessed++
-        } catch (error) {
-          const errorMessage = `Error processing user ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
-          console.error(errorMessage)
-          stats.errors.push(errorMessage)
-        }
-      }
+      // for (const user of usersNeedingTweets) {
+      //   try {
+      //     await this.generateTweetsForUser(user)
+      //     stats.usersProcessed++
+      //   } catch (error) {
+      //     const errorMessage = `Error processing user ${user.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      //     console.error(errorMessage)
+      //     stats.errors.push(errorMessage)
+      //   }
+      // }
 
-      // Update stats
-      const totalTweets = await this.getTotalTweetsGeneratedToday()
-      stats.tweetsGenerated = totalTweets
+      // // Update stats
+      // const totalTweets = await this.getTotalTweetsGeneratedToday()
+      // stats.tweetsGenerated = totalTweets
+
+      // Temporary mock response until backend API is implemented
+      console.log('[tweet-generator-cron] runTweetGeneration temporarily disabled - using backend API instead')
 
     } catch (error) {
       const errorMessage = `Critical error in tweet generation: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -171,6 +175,7 @@ export class TweetGeneratorCron {
   }
 
   private async getUsersNeedingTweets() {
+    // TODO: Re-implement using backend API instead of Prisma
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
@@ -181,52 +186,57 @@ export class TweetGeneratorCron {
     // 2. Have subreddits configured
     // 3. Have a voice profile
     // 4. Haven't reached their daily tweet limit
-    return await prisma.user.findMany({
-      where: {
-        schedule: {
-          isActive: true,
-        },
-        sources: {
-          some: {
-            isEnabled: true,
-          },
-        },
-        voiceProfile: {
-          isNot: null,
-        },
-      },
-      include: {
-        schedule: true,
-        voiceProfile: true,
-        sources: {
-          where: {
-            isEnabled: true,
-          },
-          include: {
-            subreddit: true,
-          },
-        },
-        queue: {
-          where: {
-            scheduledFor: {
-              gte: today,
-              lt: tomorrow,
-            },
-            status: {
-              in: ['SCHEDULED', 'POSTED'],
-            },
-          },
-        },
-        accounts: {
-          where: {
-            provider: 'X',
-          },
-        },
-      },
-    })
+    // return await prisma.user.findMany({
+    //   where: {
+    //     schedule: {
+    //       isActive: true,
+    //     },
+    //     sources: {
+    //       some: {
+    //         isEnabled: true,
+    //       },
+    //     },
+    //     voiceProfile: {
+    //       isNot: null,
+    //     },
+    //   },
+    //   include: {
+    //     schedule: true,
+    //     voiceProfile: true,
+    //     sources: {
+    //       where: {
+    //         isEnabled: true,
+    //       },
+    //       include: {
+    //         subreddit: true,
+    //       },
+    //     },
+    //     queue: {
+    //       where: {
+    //         scheduledFor: {
+    //           gte: today,
+    //           lt: tomorrow,
+    //         },
+    //         status: {
+    //           in: ['SCHEDULED', 'POSTED'],
+    //         },
+    //       },
+    //     },
+    //     accounts: {
+    //       where: {
+    //         provider: 'X',
+    //       },
+    //     },
+    //   },
+    // })
+
+    // Temporary mock response until backend API is implemented
+    console.log('[tweet-generator-cron] getUsersNeedingTweets temporarily disabled - using backend API instead')
+    return []
   }
 
   private async generateTweetsForUser(user: any) {
+    // TODO: Re-implement using backend API instead of Prisma
     if (!user.schedule || !user.voiceProfile || !user.sources.length || !user.accounts.length) {
       console.log(`Skipping user ${user.id}: missing required data`)
       return
@@ -284,6 +294,7 @@ export class TweetGeneratorCron {
   }
 
   private async createScheduledPosts(user: any, generatedTweets: any[], redditPosts: any[]) {
+    // TODO: Re-implement using backend API instead of Prisma
     const socialAccount = user.accounts[0] // Use first X account
     const { preferredTimes, timeZone } = user.schedule
 
@@ -297,74 +308,77 @@ export class TweetGeneratorCron {
       )
 
       // Create or find source item
-      let sourceItem = null
-      if (sourcePost) {
-        sourceItem = await prisma.sourceItem.upsert({
-          where: {
-            provider_externalId: {
-              provider: 'REDDIT',
-              externalId: sourcePost.id,
-            },
-          },
-          update: {
-            score: sourcePost.score,
-            commentsCount: sourcePost.numComments,
-          },
-          create: {
-            provider: 'REDDIT',
-            externalId: sourcePost.id,
-            url: sourcePost.url,
-            title: sourcePost.title,
-            author: sourcePost.author,
-            summary: sourcePost.selftext?.slice(0, 500),
-            content: {
-              selftext: sourcePost.selftext,
-              title: sourcePost.title,
-              subreddit: sourcePost.subreddit,
-            },
-            score: sourcePost.score,
-            commentsCount: sourcePost.numComments,
-            subreddit: {
-              connectOrCreate: {
-                where: { name: sourcePost.subreddit },
-                create: { 
-                  name: sourcePost.subreddit,
-                  title: `r/${sourcePost.subreddit}`,
-                },
-              },
-            },
-          },
-        })
-      }
+      // let sourceItem = null
+      // if (sourcePost) {
+      //   sourceItem = await prisma.sourceItem.upsert({
+      //     where: {
+      //       provider_externalId: {
+      //         provider: 'REDDIT',
+      //         externalId: sourcePost.id,
+      //       },
+      //     },
+      //     update: {
+      //       score: sourcePost.score,
+      //       commentsCount: sourcePost.numComments,
+      //     },
+      //     create: {
+      //       provider: 'REDDIT',
+      //       externalId: sourcePost.id,
+      //       url: sourcePost.url,
+      //       title: sourcePost.title,
+      //       author: sourcePost.author,
+      //       summary: sourcePost.selftext?.slice(0, 500),
+      //       content: {
+      //         selftext: sourcePost.selftext,
+      //         title: sourcePost.title,
+      //         subreddit: sourcePost.subreddit,
+      //       },
+      //       score: sourcePost.score,
+      //       commentsCount: sourcePost.numComments,
+      //       subreddit: {
+      //         connectOrCreate: {
+      //           where: { name: sourcePost.subreddit },
+      //           create: { 
+      //             name: sourcePost.subreddit,
+      //             title: `r/${sourcePost.subreddit}`,
+      //           },
+      //         },
+      //       },
+      //     },
+      //   })
+      // }
 
-      // Create draft
-      const draft = await prisma.draft.create({
-        data: {
-          userId: user.id,
-          sourceItemId: sourceItem?.id,
-          text: tweet.text,
-          status: 'APPROVED', // Auto-approve generated tweets
-          meta: {
-            generatedAt: new Date(),
-            sourceSubreddit: tweet.sourcePost?.subreddit,
-            sourceTitle: tweet.sourcePost?.title,
-          },
-        },
-      })
+      // // Create draft
+      // const draft = await prisma.draft.create({
+      //   data: {
+      //     userId: user.id,
+      //     sourceItemId: sourceItem?.id,
+      //     text: tweet.text,
+      //     status: 'APPROVED', // Auto-approve generated tweets
+      //     meta: {
+      //       generatedAt: new Date(),
+      //       sourceSubreddit: tweet.sourcePost?.subreddit,
+      //       sourceTitle: tweet.sourcePost?.title,
+      //     },
+      //   },
+      // })
 
-      // Calculate scheduled time
-      const scheduledTime = this.calculateScheduledTime(preferredTimes, timeZone, i)
+      // // Calculate scheduled time
+      // const scheduledTime = this.calculateScheduledTime(preferredTimes, timeZone, i)
 
-      // Create scheduled post
-      await prisma.scheduledPost.create({
-        data: {
-          userId: user.id,
-          socialAccountId: socialAccount.id,
-          draftId: draft.id,
-          status: 'SCHEDULED',
-          scheduledFor: scheduledTime,
-        },
-      })
+      // // Create scheduled post
+      // await prisma.scheduledPost.create({
+      //   data: {
+      //     userId: user.id,
+      //     socialAccountId: socialAccount.id,
+      //     draftId: draft.id,
+      //     status: 'SCHEDULED',
+      //     scheduledFor: scheduledTime,
+      //   },
+      // })
+
+      // Temporary mock response until backend API is implemented
+      console.log(`[tweet-generator-cron] createScheduledPosts temporarily disabled - using backend API instead: ${user.id}`)
     }
   }
 
@@ -396,19 +410,24 @@ export class TweetGeneratorCron {
   }
 
   private async getTotalTweetsGeneratedToday(): Promise<number> {
+    // TODO: Re-implement using backend API instead of Prisma
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    return await prisma.scheduledPost.count({
-      where: {
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
-    })
+    // return await prisma.scheduledPost.count({
+    //   where: {
+    //     createdAt: {
+    //       gte: today,
+    //       lt: tomorrow,
+    //     },
+    //   },
+    // })
+
+    // Temporary mock response until backend API is implemented
+    console.log('[tweet-generator-cron] getTotalTweetsGeneratedToday temporarily disabled - using backend API instead')
+    return 0
   }
 
   public async runNow(): Promise<TweetGenerationStats> {

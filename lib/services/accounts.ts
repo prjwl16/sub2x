@@ -1,42 +1,17 @@
-import { prisma } from '../db'
-import { ApiError } from '../errors'
-import type { SocialAccountSummary } from '../../types/api'
+// // // import { prisma } from "../db"
+// import { ApiError } from '../errors'
+// import type { SocialAccountSummary } from '../../types/api'
+
+// This service is temporarily disabled as we're not using Prisma in the frontend
+// TODO: Re-implement using backend API calls
 
 export const accounts = {
-  async listForUser(userId: string): Promise<SocialAccountSummary[]> {
-    const accounts = await prisma.socialAccount.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        provider: true,
-        providerAccountId: true,
-        username: true,
-        displayName: true,
-        expiresAt: true,
-      },
-    })
-
-    return accounts.map(account => ({
-      ...account,
-      provider: account.provider.toString(),
-      expiresAt: account.expiresAt?.toISOString() || null,
-    }))
+  async listForUser(userId: string): Promise<any[]> {
+    // TODO: Implement using backend API
+    return []
   },
 
   async deleteForUser(userId: string, accountId: string): Promise<void> {
-    const account = await prisma.socialAccount.findFirst({
-      where: {
-        id: accountId,
-        userId,
-      },
-    })
-
-    if (!account) {
-      throw new ApiError(404, 'NOT_FOUND', 'Account not found')
-    }
-
-    await prisma.socialAccount.delete({
-      where: { id: accountId },
-    })
+    // TODO: Implement using backend API
   },
 }

@@ -3,12 +3,12 @@ import { SignInButton } from "@/components/SignInButton";
 import { FeatureCard } from "@/components/FeatureCard";
 import { FancyArrowFlow } from "@/components/FancyArrowFlow";
 import { Target, Zap, TrendingUp, Snowflake, Link } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { SignOutButton } from "@/components/SignOutButton";
 import { DashboardButton } from "@/components/DashboardButton";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
-  const { data: session } = useSession()
+  const { isAuthenticated } = useAuth()
 
   return (
     <div className="w-full">
@@ -32,7 +32,7 @@ export default function Home() {
           </p>
 
           <div className="flex justify-center items-center pt-8 text-gray-600">
-            {session ? <DashboardButton /> : <SignInButton />}
+            {isAuthenticated ? <DashboardButton /> : <SignInButton />}
           </div>
         </div>
       </section>
@@ -87,7 +87,7 @@ export default function Home() {
             Never run out of content ideas. Stay consistent. Grow your audience.
           </p>
           <div className="pt-4">
-            {session ? <DashboardButton /> : <SignInButton />}
+            {isAuthenticated ? <DashboardButton /> : <SignInButton />}
           </div>
         </div>
       </section>

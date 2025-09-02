@@ -1,13 +1,17 @@
 "use client"
 
-import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
 export function SignInButton() {
+  const handleSignIn = () => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+    window.location.href = `${backendUrl}/auth/twitter`
+  }
+  
   return (
     <Button
-      onClick={() => signIn("twitter", { callbackUrl: "/dashboard" })}
+      onClick={handleSignIn}
       className="gradient-accent text-white hover:opacity-90 transition-opacity"
       size="lg"
     >

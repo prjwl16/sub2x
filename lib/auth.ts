@@ -1,8 +1,6 @@
 // lib/auth.ts
 import { NextAuthOptions } from "next-auth";
 import TwitterProvider from "next-auth/providers/twitter";
-import { prisma } from "./db";
-import { processUserFirstLogin } from "./onboarding";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -37,75 +35,8 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "twitter" && account?.access_token) {
-        try {
-          // Check if user already exists in our database
-          const existingUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            include: {
-              accounts: {
-                where: { provider: "X" },
-              },
-            },
-          });
-
-          if (!existingUser) {
-            // Create new user in our database
-            await prisma.user.create({
-              data: {
-                id: user.id,
-                name: user.name,
-                image: user.image,
-                handle: (user as any).username,
-              },
-            });
-          }
-
-          // Upsert the social account with the access token
-          await prisma.socialAccount.upsert({
-            where: {
-              provider_providerAccountId: {
-                provider: "X",
-                providerAccountId: account.providerAccountId,
-              },
-            },
-            update: {
-              accessToken: account.access_token,
-              refreshToken: account.refresh_token,
-              scope: account.scope,
-              tokenType: account.token_type,
-              expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-              username: (user as any).username,
-              displayName: user.name,
-            },
-            create: {
-              userId: user.id,
-              provider: "X",
-              providerAccountId: account.providerAccountId,
-              accessToken: account.access_token,
-              refreshToken: account.refresh_token,
-              scope: account.scope,
-              tokenType: account.token_type,
-              expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-              username: (user as any).username,
-              displayName: user.name,
-            },
-          });
-
-          // Fire-and-forget onboarding (do not block sign-in)
-          if (user?.id) {
-            console.log('[auth] onboarding', (user as any).id)
-            // Run in next tick to avoid blocking sign-in
-            Promise.resolve().then(() => {
-              processUserFirstLogin((user as any).id as string).catch((err) => console.error('[auth] onboarding error', err))
-            })
-          }
-          return true;
-        } catch (error) {
-          console.error("Error during sign in:", error);
-          return false;
-        }
-      }
+      // Since we're using the backend OAuth flow, this won't be called
+      // The actual OAuth happens in the backend
       return true;
     },
 
@@ -137,6 +68,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   pages: {
-    signIn: "/api/auth/signin",
+    signIn: "/",
   },
 };

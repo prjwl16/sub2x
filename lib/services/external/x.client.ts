@@ -1,7 +1,7 @@
 // External X (Twitter) API client - STUB IMPLEMENTATION
 // TODO: Integrate with actual X API v2
 
-import { prisma } from '../../db'
+// // import { prisma } from "../db"
 
 export interface TweetPayload {
   text: string
@@ -17,29 +17,34 @@ export interface TweetResponse {
 
 export class XClient {
   async getAccessTokenForUser(userId: string): Promise<string | null> {
-    const account = await prisma.socialAccount.findFirst({
-      where: {
-        userId,
-        provider: 'X',
-      },
-      select: {
-        accessToken: true,
-        expiresAt: true,
-      },
-    })
+    // TODO: Re-implement using backend API instead of Prisma
+    // const account = await prisma.socialAccount.findFirst({
+    //   where: {
+    //     userId,
+    //     provider: 'X',
+    //   },
+    //   select: {
+    //     accessToken: true,
+    //     expiresAt: true,
+    //   },
+    // })
 
-    if (!account?.accessToken) {
-      return null
-    }
+    // if (!account?.accessToken) {
+    //   return null
+    // }
 
-    // Check if token is expired
-    if (account.expiresAt && account.expiresAt < new Date()) {
-      // TODO: Implement token refresh logic
-      console.warn('Access token expired for user:', userId)
-      return null
-    }
+    // // Check if token is expired
+    // if (account.expiresAt && account.expiresAt < new Date()) {
+    //   // TODO: Implement token refresh logic
+    //   console.warn('Access token expired for user:', userId)
+    //   return null
+    // }
 
-    return account.accessToken
+    // return account.accessToken
+
+    // Temporary mock response until backend API is implemented
+    console.log(`[XClient] getAccessTokenForUser temporarily disabled - using backend API instead: ${userId}`)
+    return null
   }
 
   async postTweet(userId: string, payload: TweetPayload): Promise<TweetResponse> {

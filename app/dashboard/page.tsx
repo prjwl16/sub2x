@@ -1,32 +1,22 @@
 "use client"
 
-import { useSession } from "next-auth/react"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { DashboardHeader } from "@/components/DashboardHeader"
 import { ConnectedAccountCard } from "@/components/cards/ConnectedAccountCard"
 import { PostingPlanCard } from "@/components/cards/PostingPlanCard"
 import { CommunitiesCard } from "@/components/cards/CommunitiesCard"
 import { StatusCard } from "@/components/cards/StatusCard"
 import { EditPlanModal } from "@/components/modals/EditPlanModal"
+import { AuthGuard } from "@/components/guards/AuthGuard"
+import { useAuth } from "@/hooks/useAuth"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Toast, useToast } from "@/components/ui/toast"
 
-export default function Dashboard() {
-  const { data: session } = useSession()
+function DashboardContent() {
+  const { user, account, usage } = useAuth()
   const { toasts, addToast, removeToast } = useToast()
   const [editPlanOpen, setEditPlanOpen] = useState(false)
-
-
-  if (!session) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800">Please sign in to access your dashboard</h1>
-        </div>
-      </div>
-    )
-  }
 
   const handleReorderCommunities = async (communities: any[]) => {
     try {
@@ -47,23 +37,23 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-grid">
       <DashboardHeader />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div className="flex items-center space-x-4 mb-4 md:mb-0">
             <Avatar className="w-12 h-12">
-              <AvatarImage src={session.user.image} alt={session.user.name || ""} />
+              <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
               <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
-                {session.user.name?.charAt(0) || "U"}
+                {user?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
-                Welcome back, {session.user.name}!
+                Welcome back, {user?.name || "User"}!
               </h1>
               <p className="text-gray-600">
-                @{session.user.handle || "your-handle"}
+                @{user?.handle || account?.username || "your-handle"}
               </p>
             </div>
           </div>
@@ -76,16 +66,16 @@ export default function Dashboard() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* <ConnectedAccountCard 
-            handle={session.user.handle}
-            isConnected={true}
-            expiresAt={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}
-          /> */}
-          
+          <ConnectedAccountCard
+            handle={account?.username || user?.handle || undefined}
+            isConnected={!!account}
+            expiresAt={account?.expiresAt || undefined}
+          />
+
           <PostingPlanCard
             onEditPlan={() => setEditPlanOpen(true)}
           />
-          
+
           <CommunitiesCard
             onReorder={handleReorderCommunities}
             onManage={handleManageCommunities}
@@ -99,8 +89,6 @@ export default function Dashboard() {
         onOpenChange={setEditPlanOpen}
       />
 
-
-
       {/* Toast Notifications */}
       {toasts.map((toast) => (
         <Toast
@@ -111,5 +99,17 @@ export default function Dashboard() {
         />
       ))}
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }

@@ -1,13 +1,13 @@
 "use client"
 
-import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { SignInButton } from "./SignInButton"
 import { SignOutButton } from "./SignOutButton"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 export function Header() {
-  const { data: session } = useSession()
+  const { isAuthenticated } = useAuth()
   const pathname = usePathname()
 
   // Only show header on base path (/) and not on dashboard
@@ -36,7 +36,7 @@ export function Header() {
 
           {/* Auth Section */}
           <div className="flex items-center">
-            {session ? (
+            {isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <Link 
                   href="/dashboard" 

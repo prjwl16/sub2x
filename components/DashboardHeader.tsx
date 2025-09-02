@@ -1,14 +1,14 @@
 "use client"
 
-import { useSession } from "next-auth/react"
 import { SignOutButton } from "./SignOutButton"
 import { Button } from "@/components/ui/button"
 import { Home, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 export function DashboardHeader() {
-  const { data: session } = useSession()
+  const { isAuthenticated } = useAuth()
   const pathname = usePathname()
 
   return (
@@ -25,7 +25,7 @@ export function DashboardHeader() {
             </Link>
 
             {/* Navigation */}
-            {/* {session && (
+            {isAuthenticated && (
               <nav className="flex items-center space-x-2">
                 <Button
                   variant={pathname === '/dashboard' ? 'default' : 'ghost'}
@@ -48,12 +48,12 @@ export function DashboardHeader() {
                   </Link>
                 </Button>
               </nav>
-            )} */}
+            )}
           </div>
 
           {/* User Section */}
           <div className="flex items-center space-x-4">
-            {session && (
+            {isAuthenticated && (
               <>
                 <SignOutButton />
               </>

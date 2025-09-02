@@ -4,119 +4,53 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Calendar, Hash, Loader2, CheckCircle, AlertCircle, Send, ChevronLeft, ChevronRight, Eye } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
-import type { PostItem, UsageSummary, DraftItem } from "@/types/api"
-
-interface GenerateSingleTweetResponse {
-  success: boolean
-  data?: {
-    draft: DraftItem
-  }
-  error?: string
-  code?: string
-}
+import { useDrafts, usePosts, useUsage, useGenerateTweets, usePostAction, useApproveDraft, useRejectDraft } from "@/lib/api"
 
 interface StatusCardProps {}
 
 export function StatusCard({}: StatusCardProps) {
-  const [drafts, setDrafts] = useState<DraftItem[]>([])
-  const [upcomingTweets, setUpcomingTweets] = useState<PostItem[]>([])
-  const [usage, setUsage] = useState<UsageSummary | null>(null)
-  const [lastPostedTweet, setLastPostedTweet] = useState<PostItem | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generateError, setGenerateError] = useState<string | null>(null)
-  const [generateSuccess, setGenerateSuccess] = useState<string | null>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [actioningIds, setActioningIds] = useState<Set<string>>(new Set())
+  const [generateSuccess, setGenerateSuccess] = useState<string | null>(null)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
 
-  // Fetch all data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+  // Use TanStack Query hooks
+  const { data: draftsData, isLoading: draftsLoading } = useDrafts({ status: 'DRAFT' }, { limit: 5 })
+  const { data: postsData, isLoading: postsLoading } = usePosts({ status: 'SCHEDULED' }, { limit: 5 })
+  const { data: usage } = useUsage()
+  const { data: lastPostedData } = usePosts({ status: 'POSTED' }, { limit: 1 })
+  
+  // Mutations
+  const generateTweetsMutation = useGenerateTweets()
+  const postActionMutation = usePostAction()
+  const approveDraftMutation = useApproveDraft()
+  const rejectDraftMutation = useRejectDraft()
 
-        // Fetch drafts (recent generated tweets)
-        const draftsResponse = await fetch('/api/drafts?status=DRAFT&limit=5')
-        if (draftsResponse.ok) {
-          const draftsData = await draftsResponse.json()
-          setDrafts(draftsData.data || [])
-        }
-
-        // Fetch upcoming tweets (scheduled posts)
-        const tweetsResponse = await fetch('/api/posts?status=SCHEDULED&limit=5')
-        if (tweetsResponse.ok) {
-          const tweetsData = await tweetsResponse.json()
-          setUpcomingTweets(tweetsData.data || [])
-        }
-
-        // Fetch usage data
-        const usageResponse = await fetch('/api/usage')
-        if (usageResponse.ok) {
-          const usageData = await usageResponse.json()
-          setUsage(usageData.data)
-        }
-
-        // Fetch last posted tweet
-        const lastPostResponse = await fetch('/api/posts?status=POSTED&limit=1')
-        if (lastPostResponse.ok) {
-          const lastPostData = await lastPostResponse.json()
-          if (lastPostData.data && lastPostData.data.length > 0) {
-            setLastPostedTweet(lastPostData.data[0])
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch data')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const drafts = draftsData?.items || []
+  const upcomingTweets = postsData?.items || []
+  const lastPostedTweet = lastPostedData?.items?.[0] || null
+  const isLoading = draftsLoading || postsLoading
 
   // Generate a single tweet
   const generateSingleTweet = async () => {
-    setIsGenerating(true)
-    setGenerateError(null)
-    setGenerateSuccess(null)
-    
     try {
-      const response = await fetch('/api/tweets/generate-one', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      })
-      
-      const result: GenerateSingleTweetResponse = await response.json()
+      const result = await generateTweetsMutation.mutateAsync()
       
       if (result.success && result.data) {
         setGenerateSuccess('Generated 1 new tweet!')
-        
-        // Add the new draft to the beginning of the drafts list
-        setDrafts(prev => [result.data!.draft, ...prev])
-        
-        // Clear success message after 5 seconds
         setTimeout(() => setGenerateSuccess(null), 5000)
       } else {
         const errorMessage = getErrorMessage(result.code, result.error)
         setGenerateError(errorMessage)
-        
-        // Clear error message after 8 seconds
         setTimeout(() => setGenerateError(null), 8000)
       }
     } catch (error) {
       console.error('Failed to generate tweet:', error)
       setGenerateError('Something went wrong. Please try again.')
       setTimeout(() => setGenerateError(null), 8000)
-    } finally {
-      setIsGenerating(false)
     }
   }
 
@@ -125,32 +59,12 @@ export function StatusCard({}: StatusCardProps) {
     setActioningIds(prev => new Set([...prev, id]))
     
     try {
-      const response = await fetch(`/api/posts/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action }),
-      })
-
-      if (response.ok) {
-        // Update local state based on action
-        if (action === 'approve') {
-          setDrafts(prev => prev.map(draft => 
-            draft.id === id ? { ...draft, status: 'POSTED' } : draft
-          ))
-        } else if (action === 'reject') {
-          setDrafts(prev => prev.map(draft => 
-            draft.id === id ? { ...draft, status: 'REJECTED' } : draft
-          ))
-        } else if (action === 'post_now') {
-          setUpcomingTweets(prev => prev.map(tweet => 
-            tweet.id === id ? { ...tweet, status: 'POSTED', postedAt: new Date().toISOString() } : tweet
-          ))
-        }
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to perform action:', errorData)
+      if (action === 'approve') {
+        await approveDraftMutation.mutateAsync(id)
+      } else if (action === 'reject') {
+        await rejectDraftMutation.mutateAsync(id)
+      } else if (action === 'post_now') {
+        await postActionMutation.mutateAsync({ id, data: { action } })
       }
     } catch (error) {
       console.error('Error performing action:', error)
@@ -265,16 +179,6 @@ export function StatusCard({}: StatusCardProps) {
     )
   }
 
-  if (error) {
-    return (
-      <Card className="glass-card">
-        <CardContent className="p-6">
-          <p className="text-red-500 text-sm">Error: {error}</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   const nextScheduledTweet = upcomingTweets[0]
   const nextPostTime = nextScheduledTweet?.scheduledFor
   const allItems = [...drafts, ...upcomingTweets]
@@ -382,10 +286,10 @@ export function StatusCard({}: StatusCardProps) {
                           <Button
                             size="sm"
                             onClick={() => handlePostAction(draft.id, 'approve')}
-                            disabled={actioningIds.has(draft.id)}
+                            disabled={actioningIds.has(draft.id) || approveDraftMutation.isPending}
                             className="flex-1 bg-green-600 hover:bg-green-700"
                           >
-                            {actioningIds.has(draft.id) ? (
+                            {actioningIds.has(draft.id) || approveDraftMutation.isPending ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <>
@@ -398,10 +302,10 @@ export function StatusCard({}: StatusCardProps) {
                             size="sm"
                             variant="destructive"
                             onClick={() => handlePostAction(draft.id, 'reject')}
-                            disabled={actioningIds.has(draft.id)}
+                            disabled={actioningIds.has(draft.id) || rejectDraftMutation.isPending}
                             className="flex-1"
                           >
-                            {actioningIds.has(draft.id) ? (
+                            {actioningIds.has(draft.id) || rejectDraftMutation.isPending ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <>
@@ -456,10 +360,10 @@ export function StatusCard({}: StatusCardProps) {
                           <Button
                             size="sm"
                             onClick={() => handlePostAction(tweet.id, 'post_now')}
-                            disabled={actioningIds.has(tweet.id)}
+                            disabled={actioningIds.has(tweet.id) || postActionMutation.isPending}
                             className="flex-1 bg-blue-600 hover:bg-blue-700"
                           >
-                            {actioningIds.has(tweet.id) ? (
+                            {actioningIds.has(tweet.id) || postActionMutation.isPending ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <>
@@ -488,10 +392,10 @@ export function StatusCard({}: StatusCardProps) {
                       
                       <Button
                         onClick={generateSingleTweet}
-                        disabled={isGenerating}
+                        disabled={generateTweetsMutation.isPending}
                         className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors duration-200"
                       >
-                        {isGenerating ? (
+                        {generateTweetsMutation.isPending ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Generating...
@@ -556,10 +460,10 @@ export function StatusCard({}: StatusCardProps) {
             
             <Button
               onClick={generateSingleTweet}
-              disabled={isGenerating}
+              disabled={generateTweetsMutation.isPending}
               className="bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors duration-200"
             >
-              {isGenerating ? (
+              {generateTweetsMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Generating...

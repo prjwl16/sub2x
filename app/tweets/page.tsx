@@ -1,13 +1,14 @@
 "use client"
 
-import { useSession } from "next-auth/react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DashboardHeader } from "@/components/DashboardHeader"
 import { Check, X, Calendar, Hash, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import type { DraftItem } from "@/types/api"
+import { AuthGuard } from "@/components/guards/AuthGuard"
+import { useAuth } from "@/hooks/useAuth"
 
 interface TweetsPageState {
   drafts: DraftItem[]
@@ -19,8 +20,8 @@ interface TweetsPageState {
   hasMore: boolean
 }
 
-export default function TweetsPage() {
-  const { data: session } = useSession()
+function TweetsPageContent() {
+  const { isAuthenticated } = useAuth()
   const [state, setState] = useState<TweetsPageState>({
     drafts: [],
     isLoading: true,
@@ -63,10 +64,10 @@ export default function TweetsPage() {
   }
 
   useEffect(() => {
-    if (session) {
+    if (isAuthenticated) {
       fetchDrafts(1)
     }
-  }, [session])
+  }, [isAuthenticated])
 
   const handleAction = async (draftId: string, action: 'approve' | 'reject') => {
     setState(prev => ({
@@ -134,7 +135,7 @@ export default function TweetsPage() {
     })
   }
 
-  if (!session) {
+  if (!isAuthenticated) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
@@ -292,5 +293,19 @@ export default function TweetsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function TweetsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <AuthGuard>
+        <TweetsPageContent />
+      </AuthGuard>
+    </Suspense>
   )
 }
