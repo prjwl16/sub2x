@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Plus, Settings, Loader2, RefreshCw, ExternalLink } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { AddSubredditsModal } from "@/components/modals/AddSubredditsModal"
+import { sourcesApi } from "@/lib/api/services"
+import { CommunityItem } from "@/lib/api/types"
 
 interface Community {
   id: string
@@ -26,23 +28,21 @@ export function CommunitiesCard({
   onReorder,
   onManage
 }: CommunitiesCardProps) {
-  const [communities, setCommunities] = useState<Community[]>([])
+  const [communities, setCommunities] = useState<CommunityItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [localCommunities, setLocalCommunities] = useState<Community[]>([])
+  const [localCommunities, setLocalCommunities] = useState<CommunityItem[]>([])
 
   // Load communities from API
   const loadCommunities = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch('/api/sources', { method: 'GET', cache: 'no-store' })
-      if (!res.ok) {
-        throw new Error('Failed to load communities')
-      }
-      const json = await res.json()
-      const data = json.data ?? []
+
+      const res = await sourcesApi.listSources()
+
+      const data = res.items ?? []
       setCommunities(data)
       setLocalCommunities(data)
     } catch (e: any) {

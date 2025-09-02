@@ -185,36 +185,34 @@ export function StatusCard({}: StatusCardProps) {
 
   return (
     <div className="glass-card p-6 rounded-xl">
-      {/* Header Section */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Content Hub</h2>
-          <div className="flex items-center gap-4 mt-2">
-            <Link href="/tweets" className="flex items-center text-sm text-blue-600 hover:text-blue-800">
-              <Eye className="w-4 h-4 mr-1" />
-              View All Tweets
-            </Link>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Posts</h2>
+        <Link href="/tweets" className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded-md hover:bg-blue-50">
+          <Eye className="w-4 h-4 mr-1" />
+          View all
+        </Link>
+      </div>
+
+      {/* Metrics */}
+      <div className="grid grid-cols-3 text-center rounded-lg border border-gray-200/60 bg-white/50 divide-x divide-gray-200/80 mb-6 overflow-hidden">
+        <div className="p-3 md:p-4">
+          <div className="font-semibold text-gray-900 text-sm md:text-base">
+            {nextPostTime ? getTimeUntilNext(nextPostTime) : 'None scheduled'}
           </div>
+          <div className="text-xs md:text-sm text-gray-500">Next post</div>
         </div>
-        <div className="flex items-center space-x-6 text-sm">
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">
-              {nextPostTime ? getTimeUntilNext(nextPostTime) : 'None scheduled'}
-            </div>
-            <div className="text-gray-500">Next post</div>
+        <div className="p-3 md:p-4">
+          <div className="font-semibold text-gray-900 text-sm md:text-base">
+            {lastPostedTweet ? formatRelativeTime(lastPostedTweet.postedAt!) : 'None yet'}
           </div>
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">
-              {lastPostedTweet ? formatRelativeTime(lastPostedTweet.postedAt!) : 'None yet'}
-            </div>
-            <div className="text-gray-500">Last post</div>
+          <div className="text-xs md:text-sm text-gray-500">Last post</div>
+        </div>
+        <div className="p-3 md:p-4">
+          <div className="font-semibold text-gray-900 text-sm md:text-base">
+            {usage ? `${usage.postsPosted}/${usage.postsAllotted}` : '0/0'}
           </div>
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">
-              {usage ? `${usage.postsPosted}/${usage.postsAllotted}` : '0/0'}
-            </div>
-            <div className="text-gray-500">This month</div>
-          </div>
+          <div className="text-xs md:text-sm text-gray-500">This month</div>
         </div>
       </div>
 
@@ -449,12 +447,12 @@ export function StatusCard({}: StatusCardProps) {
           </>
         ) : (
           /* Empty State */
-          <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-              <Plus className="w-8 h-8 text-gray-400" />
+          <div className="flex flex-col items-center justify-center text-center py-12 md:py-16">
+            <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full mb-4">
+              <Plus className="w-7 h-7 md:w-8 md:h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No content yet</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No content yet</h3>
+            <p className="text-gray-600 mb-6 max-w-md">
               Get started by generating your first tweet from your curated Reddit sources.
             </p>
             

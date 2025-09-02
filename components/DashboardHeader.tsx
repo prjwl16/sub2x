@@ -23,32 +23,6 @@ export function DashboardHeader() {
               </div>
               <span className="text-xl font-bold text-gray-800">Sub2X</span>
             </Link>
-
-            {/* Navigation */}
-            {isAuthenticated && (
-              <nav className="flex items-center space-x-2">
-                <Button
-                  variant={pathname === '/dashboard' ? 'default' : 'ghost'}
-                  size="sm"
-                  asChild
-                >
-                  <Link href="/dashboard" className="flex items-center">
-                    <Home className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </Link>
-                </Button>
-                <Button
-                  variant={pathname === '/tweets' ? 'default' : 'ghost'}
-                  size="sm"
-                  asChild
-                >
-                  <Link href="/tweets" className="flex items-center">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Tweets
-                  </Link>
-                </Button>
-              </nav>
-            )}
           </div>
 
           {/* User Section */}

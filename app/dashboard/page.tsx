@@ -7,7 +7,6 @@ import { PostingPlanCard } from "@/components/cards/PostingPlanCard"
 import { CommunitiesCard } from "@/components/cards/CommunitiesCard"
 import { StatusCard } from "@/components/cards/StatusCard"
 import { EditPlanModal } from "@/components/modals/EditPlanModal"
-import { AuthGuard } from "@/components/guards/AuthGuard"
 import { useAuth } from "@/hooks/useAuth"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -66,12 +65,6 @@ function DashboardContent() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ConnectedAccountCard
-            handle={account?.username || user?.handle || undefined}
-            isConnected={!!account}
-            expiresAt={account?.expiresAt || undefined}
-          />
-
           <PostingPlanCard
             onEditPlan={() => setEditPlanOpen(true)}
           />

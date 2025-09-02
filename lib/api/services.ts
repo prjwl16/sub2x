@@ -112,6 +112,18 @@ export const postsApi = {
     const response = await apiClient.post(`/posts/${id}`, data);
     return response.data;
   },
+
+  listDrafts: async (
+    filter?: DraftStatusFilter,
+    pagination?: PaginationParams
+  ): Promise<{
+    items: DraftItem[];
+    meta: { total: number; offset: number; limit: number };
+  }> => {
+    const params = { ...filter, ...pagination };
+    const response = await apiClient.get('/posts/drafts', { params });
+    return response.data;
+  },
 };
 
 // Drafts
@@ -125,19 +137,19 @@ export const draftsApi = {
     meta: { total: number; offset: number; limit: number };
   }> => {
     const params = { ...filter, ...pagination };
-    const response = await apiClient.get('/drafts', { params });
+    const response = await apiClient.get('/posts/drafts', { params });
     return response.data;
   },
 
   // POST /api/drafts/:id/approve
   approveDraft: async (id: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.post(`/drafts/${id}/approve`);
+    const response = await apiClient.post(`/posts/drafts/${id}/approve`);
     return response.data.data;
   },
 
   // POST /api/drafts/:id/reject
   rejectDraft: async (id: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.post(`/drafts/${id}/reject`);
+    const response = await apiClient.post(`/posts/drafts/${id}/reject`);
     return response.data.data;
   },
 };

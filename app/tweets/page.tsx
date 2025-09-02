@@ -9,6 +9,7 @@ import { Check, X, Calendar, Hash, Loader2, ChevronLeft, ChevronRight } from "lu
 import type { DraftItem } from "@/types/api"
 import { AuthGuard } from "@/components/guards/AuthGuard"
 import { useAuth } from "@/hooks/useAuth"
+import { postsApi } from "@/lib/api/services"
 
 interface TweetsPageState {
   drafts: DraftItem[]
@@ -36,12 +37,12 @@ function TweetsPageContent() {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }))
       
-      const response = await fetch(`/api/drafts?limit=10&offset=${(page - 1) * 10}`)
-      if (response.ok) {
-        const data = await response.json()
+      const response = await postsApi.listDrafts()
+      if (response) {
+        const data = response
         setState(prev => ({
           ...prev,
-          drafts: data.data || [],
+          drafts: data.items || [],
           currentPage: page,
           totalPages: Math.ceil((data.meta?.total || 0) / 10),
           hasMore: (data.meta?.total || 0) > page * 10,
