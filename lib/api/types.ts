@@ -217,3 +217,29 @@ export interface SubredditSuggestion {
   topic?: string;
   audience?: string;
 }
+
+// Voice Profile types
+export interface VoiceProfileRules {
+  tone: 'professional' | 'casual' | 'friendly' | 'formal' | 'humorous';
+  style: 'informative' | 'entertaining' | 'persuasive' | 'educational' | 'conversational';
+  length: 'short' | 'medium' | 'long';
+  hashtags?: boolean;
+  mentions?: boolean;
+  emojis?: boolean;
+  [key: string]: any; // Allow custom rules
+}
+
+export interface VoiceProfile {
+  id: string;
+  rules: VoiceProfileRules;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateVoiceProfileRequest {
+  rules: VoiceProfileRules;
+}
+
+export interface UpdateVoiceProfileRequest {
+  rules: Partial<VoiceProfileRules>;
+}

@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Toast, useToast } from "@/components/ui/toast"
 
 function DashboardContent() {
-  const { user, account, usage } = useAuth()
+  const { user, account } = useAuth()
   const { toasts, addToast, removeToast } = useToast()
   const [editPlanOpen, setEditPlanOpen] = useState(false)
 

@@ -69,6 +69,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         try {
           localStorage.removeItem('auth_token')
+          localStorage.removeItem('auth-storage')
         } catch (_) {}
         set({
           isAuthenticated: false,
@@ -76,43 +77,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           usage: null,
         })
-      },
-
-      // fetchUserData: async () => { // This function is removed
-      //   const { token } = get()
-      //   if (!token) return
-
-      //   set({ isLoading: true })
-        
-      //   try {
-      //     const response = await fetch('/api/me', {
-      //       headers: {
-      //         'Authorization': `Bearer ${token}`,
-      //         'Content-Type': 'application/json',
-      //       },
-      //     })
-
-      //     if (response.ok) {
-      //       const data = await response.json()
-      //       if (data.ok && data.data) {
-      //         set({
-      //           user: data.data.user,
-      //           account: data.data.account,
-      //           usage: data.data.usage,
-      //           isAuthenticated: true,
-      //         })
-      //       }
-      //     } else {
-      //       // Token might be invalid, logout
-      //       get().logout()
-      //     }
-      //   } catch (error) {
-      //     console.error('Error fetching user data:', error)
-      //     get().logout()
-      //   } finally {
-      //     set({ isLoading: false })
-      //   }
-      // },
+      },    
     }),
     {
       name: 'auth-storage',

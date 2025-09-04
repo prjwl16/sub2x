@@ -37,12 +37,16 @@ function AuthContent() {
         setUser(me.user)
         setUsage(me.usage)
         cleanUrl()
-        router.replace("/dashboard")
-      } catch (e) {
-        // Clear token on failure to avoid loops
+        router.replace("/onboarding")
+      } catch (e: any) {
         logout()
         cleanUrl()
-        setError("Authentication failed. Please try again.")
+        if (e?.response?.status === 404) {
+          setError("User not found. Please sign in again.")
+          setTimeout(() => router.replace('/'), 2000)
+        } else {
+          setError("Authentication failed. Please try again.")
+        }
       }
     }
 

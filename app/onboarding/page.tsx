@@ -1,10 +1,13 @@
 "use client"
 
+import { onboardingApi, useVoiceProfile } from '@/lib/api';
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Suggestion = { name: string; topic?: string; audience?: string }
 
 export default function OnboardingPage() {
+  const router = useRouter()
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [initialSuggestions, setInitialSuggestions] = useState<Suggestion[]>([])
   const [selected, setSelected] = useState<string[]>([])
@@ -13,16 +16,36 @@ export default function OnboardingPage() {
   const [query, setQuery] = useState('')
   const [inputError, setInputError] = useState<string | null>(null)
   const cacheRef = useRef<Map<string, Suggestion[]>>(new Map())
+  
+  const { data: voiceProfile, isLoading: voiceProfileLoading, error: voiceProfileError } = useVoiceProfile()
+
+  useEffect(() => {
+    if (voiceProfileLoading) return
+    
+    if (voiceProfileError) {
+      const axiosError = voiceProfileError as any
+      if (axiosError?.response?.status === 404) {
+        return
+      }
+      setError('Failed to check onboarding status. Please refresh the page.')
+      return
+    }
+    
+    if (voiceProfile && voiceProfile.length > 0) {
+      router.replace('/dashboard')
+      return
+    }
+  }, [voiceProfile, voiceProfileLoading, voiceProfileError, router])
 
   useEffect(() => {
     let cancelled = false
       ; (async () => {
         try {
-          const res = await fetch('/api/onboarding/suggestions', { method: 'GET', cache: 'no-store' })
-          if (!res.ok) throw new Error('Failed to load suggestions')
-          const json = await res.json()
+          const res = await onboardingApi.getSuggestions()
+          if (!res) throw new Error('Failed to load suggestions')
+          const json = await res
           if (!cancelled) {
-            const data = json.data ?? []
+            const data = json ?? []
             setSuggestions(data)
             setInitialSuggestions(data)
           }
@@ -52,11 +75,9 @@ export default function OnboardingPage() {
     const controller = new AbortController()
     const id = setTimeout(async () => {
       try {
-        const url = `/api/onboarding/suggestions?q=${encodeURIComponent(q)}&limit=20`
-        const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: controller.signal })
-        if (!res.ok) return
-        const json = await res.json()
-        const data: Suggestion[] = json.data ?? []
+        const res = await onboardingApi.getSuggestions({ q, limit: 20 })
+        if (!res) return
+        const data: Suggestion[] = res ?? []
         cacheRef.current.set(key, data)
         setSuggestions(data)
       } catch {
@@ -108,18 +129,10 @@ export default function OnboardingPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subreddits: selected }),
-      })
-      if (!res.ok) {
-        const txt = await res.text()
-        throw new Error(txt || 'Failed to complete onboarding')
-      }
-      window.location.href = '/dashboard'
+      await onboardingApi.completeOnboarding({ subreddits: selected })
+      router.replace('/dashboard')
     } catch (e: any) {
-      setError(e?.message || 'Failed to complete')
+      setError(e?.message || 'Failed to complete onboarding')
     } finally {
       setLoading(false)
     }
@@ -136,6 +149,19 @@ export default function OnboardingPage() {
       .map(n => ({ name: n }))
     return [...selectedOnly, ...filtered]
   }, [suggestions, selected, query])
+
+  // Show loading state while checking voice profile
+  if (voiceProfileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking onboarding status...</h2>
+          <p className="text-gray-600">Verifying your voice profile setup.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto py-16 px-4">

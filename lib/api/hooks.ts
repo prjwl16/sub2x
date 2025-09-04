@@ -10,6 +10,7 @@ import {
   usageApi,
   onboardingApi,
   systemApi,
+  voiceProfileApi,
 } from './services';
 import { DraftStatusFilter, PostStatusFilter } from './types';
 
@@ -26,6 +27,7 @@ export const queryKeys = {
   onboarding: ['onboarding'] as const,
   system: ['system'] as const,
   cron: ['cron'] as const,
+  voiceProfile: ['voiceProfile'] as const,
 };
 
 // User Hooks
@@ -259,6 +261,49 @@ export const useCronControl = () => {
     mutationFn: systemApi.controlCron,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.cron });
+    },
+  });
+};
+
+// Voice Profile Hooks
+export const useVoiceProfile = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: queryKeys.voiceProfile,
+    queryFn: voiceProfileApi.getVoiceProfile,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useCreateVoiceProfile = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: voiceProfileApi.createVoiceProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceProfile });
+    },
+  });
+};
+
+export const useUpdateVoiceProfile = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: voiceProfileApi.updateVoiceProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceProfile });
+    },
+  });
+};
+
+export const useDeleteVoiceProfile = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: voiceProfileApi.deleteVoiceProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceProfile });
     },
   });
 };

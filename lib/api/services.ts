@@ -21,6 +21,9 @@ import type {
   DraftStatusFilter,
   GenerateTweetResponse,
   SubredditSuggestion,
+  VoiceProfile,
+  CreateVoiceProfileRequest,
+  UpdateVoiceProfileRequest,
 } from './types';
 
 // User Management
@@ -239,5 +242,31 @@ export const systemApi = {
   }> => {
     const response = await apiClient.post('/cron/tweet-generator', data);
     return response.data;
+  },
+};
+
+// Voice Profile
+export const voiceProfileApi = {
+  // GET /api/voice-profile
+  getVoiceProfile: async (): Promise<VoiceProfile[]> => {
+    const response = await apiClient.get('/voice-profile');
+    return response.data.data;
+  },
+
+  // POST /api/voice-profile
+  createVoiceProfile: async (data: CreateVoiceProfileRequest): Promise<VoiceProfile> => {
+    const response = await apiClient.post('/voice-profile', data);
+    return response.data.data;
+  },
+
+  // PUT /api/voice-profile
+  updateVoiceProfile: async (data: UpdateVoiceProfileRequest): Promise<VoiceProfile> => {
+    const response = await apiClient.put('/voice-profile', data);
+    return response.data.data;
+  },
+
+  // DELETE /api/voice-profile
+  deleteVoiceProfile: async (): Promise<void> => {
+    await apiClient.delete('/voice-profile');
   },
 };

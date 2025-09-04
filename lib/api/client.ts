@@ -32,9 +32,13 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 404) {
+      // Clear all auth storage
       localStorage.removeItem('auth_token');
-      window.location.href = '/auth';
+      localStorage.removeItem('auth-storage');
+      
+      // Clear any stored auth state and redirect to auth page
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
