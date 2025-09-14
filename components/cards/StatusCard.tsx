@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Calendar, Hash, Loader2, CheckCircle, AlertCircle, Send, ChevronLeft, ChevronRight, Eye } from "lucide-react"
 import { useState, useRef } from "react"
 import Link from "next/link"
-import { useDrafts, usePosts, useUsage, useGenerateTweets, usePostAction, useApproveDraft, useRejectDraft } from "@/lib/api"
+import { useDrafts, usePosts, useGenerateTweets, usePostAction, useApproveDraft, useRejectDraft } from "@/lib/api"
 
 interface StatusCardProps {}
 
@@ -20,7 +20,6 @@ export function StatusCard({}: StatusCardProps) {
   // Use TanStack Query hooks
   const { data: draftsData, isLoading: draftsLoading } = useDrafts({ status: 'DRAFT' }, { limit: 5 })
   const { data: postsData, isLoading: postsLoading } = usePosts({ status: 'SCHEDULED' }, { limit: 5 })
-  const { data: usage } = useUsage()
   const { data: lastPostedData } = usePosts({ status: 'POSTED' }, { limit: 1 })
   
   // Mutations
@@ -210,7 +209,7 @@ export function StatusCard({}: StatusCardProps) {
         </div>
         <div className="p-3 md:p-4">
           <div className="font-semibold text-gray-900 text-sm md:text-base">
-            {usage ? `${usage.postsPosted}/${usage.postsAllotted}` : '0/0'}
+            {/* {usage ? `${usage.postsPosted}/${usage.postsAllotted}` : '0/0'} */}
           </div>
           <div className="text-xs md:text-sm text-gray-500">This month</div>
         </div>

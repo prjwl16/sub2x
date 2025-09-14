@@ -40,11 +40,9 @@ export function CommunitiesCard({
       setLoading(true)
       setError(null)
 
-      const res = await sourcesApi.listSources()
 
-      const data = res.items ?? []
-      setCommunities(data)
-      setLocalCommunities(data)
+      setCommunities([])
+      setLocalCommunities([])
     } catch (e: any) {
       setError(e?.message || 'Failed to load communities')
     } finally {
@@ -219,12 +217,12 @@ export function CommunitiesCard({
         </CardContent>
       </Card>
 
-      <AddSubredditsModal
+      {/* <AddSubredditsModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddSubreddits}
         existingSubreddits={existingSubredditNames}
-      />
+      /> */}
     </>
   )
 }

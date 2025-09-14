@@ -13,23 +13,23 @@ interface PostingPlanCardProps {
 }
 
 export function PostingPlanCard({ onEditPlan }: PostingPlanCardProps) {
-  const { schedule, usage, isLoading, error, updateSchedule } = usePostingPlan()
+  const { updateSchedule } = usePostingPlan()
   const [isUpdating, setIsUpdating] = useState(false)
 
   // Calculate derived values
-  const monthlyLimit = usage?.postsAllotted || 100
-  const postsThisMonth = usage?.postsPosted || 0
+  const monthlyLimit = 100
+  const postsThisMonth = 0
   const progress = Math.round((postsThisMonth / monthlyLimit) * 100)
-  const isActive = schedule?.isActive ?? true
+  const isActive = true
   const status = isActive ? "Active" : "Paused"
   const statusColor = isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
 
   // Format schedule display
   const formatSchedule = () => {
-    if (!schedule) return "1/day at 9:00 AM"
-    const postsPerDay = schedule.postsPerDay
-    const timeZone = schedule.timeZone
-    const preferredTime = schedule.preferredTimes[0] || "9:00 AM"
+    return "1/day at 9:00 AM"
+    const postsPerDay = 1
+    const timeZone = "UTC"
+    const preferredTime = "9:00 AM"
     return `${postsPerDay}/day at ${preferredTime}, ${timeZone}`
   }
 
@@ -44,7 +44,7 @@ export function PostingPlanCard({ onEditPlan }: PostingPlanCardProps) {
     }
   }
 
-  if (isLoading) {
+  if (false) {
     return (
       <Card className="glass-card hover:translate-y-[-2px] transition-all duration-200">
         <CardHeader className="pb-3">
@@ -80,7 +80,7 @@ export function PostingPlanCard({ onEditPlan }: PostingPlanCardProps) {
     )
   }
 
-  if (error) {
+  if (false) {
     return (
       <Card className="glass-card hover:translate-y-[-2px] transition-all duration-200">
         <CardHeader className="pb-3">
@@ -91,7 +91,6 @@ export function PostingPlanCard({ onEditPlan }: PostingPlanCardProps) {
         <CardContent>
           <div className="text-center py-4">
             <p className="text-red-600 text-sm">Failed to load posting plan</p>
-            <p className="text-gray-500 text-xs mt-1">{error}</p>
           </div>
         </CardContent>
       </Card>

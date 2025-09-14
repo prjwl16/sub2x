@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuthStore } from '@/stores/auth.store'
-import { useMe, useUsage } from '@/lib/api'
+import { useMe } from '@/lib/api/hooks'
 
 export const useAuth = () => {
   const {
@@ -8,19 +8,14 @@ export const useAuth = () => {
     isLoading,
     token,
     user,
-    usage,
     setToken,
     setUser,
-    setUsage,
     setLoading,
     logout,
   } = useAuthStore()
 
   // Only make API calls if we have a token
   const { data: meData, isLoading: meLoading, error: meError } = useMe({
-    enabled: !!token && isAuthenticated,
-  })
-  const { data: usageData, isLoading: usageLoading, error: usageError } = useUsage({
     enabled: !!token && isAuthenticated,
   })
 
@@ -31,16 +26,11 @@ export const useAuth = () => {
     }
   }, [meData, setUser])
 
-  React.useEffect(() => {
-    if (usageData) {
-      setUsage(usageData)
-    }
-  }, [usageData, setUsage])
 
   return {
     // State
     isAuthenticated,
-    isLoading: isLoading || (!!token && (meLoading || usageLoading)),
+    isLoading: isLoading || (!!token && (meLoading)),
     token,
     user: user || meData?.user,
     account: meData?.account && meData.account.username ? {
@@ -51,21 +41,17 @@ export const useAuth = () => {
       displayName: meData.account.displayName || '',
       expiresAt: meData.account.expiresAt,
     } : null,
-    usage: usage || usageData,
     
     // Actions
     setToken,
     setUser,
-    setUsage,
     setLoading,
     logout,
     
     // Computed values
     isLoggedIn: isAuthenticated && !!token,
-    remainingPosts: (usage || usageData) ? (usage || usageData)!.postsAllotted - (usage || usageData)!.postsPosted : 0,
     
     // API state
     meError,
-    usageError,
   }
-}
+} 

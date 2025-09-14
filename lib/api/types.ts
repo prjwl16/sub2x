@@ -47,7 +47,6 @@ export interface UsageSummary {
 export interface MeResponse {
   user: UserProfile;
   account: SocialAccountSummary | null;
-  usage: UsageSummary;
 }
 
 // Source types

@@ -122,13 +122,6 @@ export function TweetGenerationExample() {
   const handleError = (errorMessage: string, code?: string) => {
     setError(errorMessage)
     setTweets([])
-    
-    // Handle specific error cases
-    if (code === 'VOICE_PROFILE_MISSING') {
-      // Redirect to onboarding
-      window.location.href = '/onboarding'
-    }
-    // You could show a toast notification here
   }
 
   return (

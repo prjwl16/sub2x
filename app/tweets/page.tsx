@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { DashboardHeader } from "@/components/DashboardHeader"
 import { Check, X, Calendar, Hash, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 import type { DraftItem } from "@/types/api"
-import { AuthGuard } from "@/components/guards/AuthGuard"
 import { useAuth } from "@/hooks/useAuth"
 import { postsApi } from "@/lib/api/services"
 
@@ -36,7 +35,7 @@ function TweetsPageContent() {
   const fetchDrafts = async (page: number = 1) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }))
-      
+
       const response = await postsApi.listDrafts()
       if (response) {
         const data = response
@@ -149,7 +148,7 @@ function TweetsPageContent() {
   return (
     <div className="min-h-screen bg-grid">
       <DashboardHeader />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -189,7 +188,7 @@ function TweetsPageContent() {
                       </span>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-4">
                     {/* Tweet Text */}
                     <div className="bg-gray-50 rounded-lg p-4">
@@ -261,11 +260,11 @@ function TweetsPageContent() {
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Previous
                 </Button>
-                
+
                 <span className="text-sm text-gray-600">
                   Page {state.currentPage} of {state.totalPages}
                 </span>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -304,9 +303,7 @@ export default function TweetsPage() {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     }>
-      <AuthGuard>
-        <TweetsPageContent />
-      </AuthGuard>
+      <TweetsPageContent />
     </Suspense>
   )
 }

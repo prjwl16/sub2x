@@ -9,7 +9,7 @@ import { userApi } from "@/lib/api/services"
 function AuthContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { setToken, setUser, setUsage, logout } = useAuthStore()
+  const { setToken, setUser, logout } = useAuthStore()
   const handledRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,12 +35,9 @@ function AuthContent() {
         setToken(token)
         const me = await userApi.getMe()
         setUser(me.user)
-        setUsage(me.usage)
-        cleanUrl()
-        router.replace("/onboarding")
+        console.log("me", me)
+        router.replace("/dashboard")
       } catch (e: any) {
-        logout()
-        cleanUrl()
         if (e?.response?.status === 404) {
           setError("User not found. Please sign in again.")
           setTimeout(() => router.replace('/'), 2000)
@@ -51,7 +48,7 @@ function AuthContent() {
     }
 
     bootstrap()
-  }, [searchParams, router, setToken, setUser, setUsage, logout])
+  }, [searchParams, router, setToken, setUser, logout])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">

@@ -2,8 +2,7 @@
 import { SignInButton } from "@/components/SignInButton";
 import { FeatureCard } from "@/components/FeatureCard";
 import { FancyArrowFlow } from "@/components/FancyArrowFlow";
-import { Target, Zap, TrendingUp, Snowflake, Link } from "lucide-react";
-import { SignOutButton } from "@/components/SignOutButton";
+import { Target, Zap, TrendingUp, Snowflake } from "lucide-react";
 import { DashboardButton } from "@/components/DashboardButton";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -18,7 +17,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-bold text-gray-800 leading-tight">
             Daily tweets.
             <br />
-            <span className="gradient-accent bg-clip-text text-transparent text-white">
+            <span className="gradient-accent bg-clip-text text-white">
               Zero effort.
             </span>
           </h1>

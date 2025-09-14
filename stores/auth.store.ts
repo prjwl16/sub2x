@@ -11,12 +11,6 @@ export interface User {
   updatedAt: string
 }
 
-export interface Usage {
-  postsAllotted: number
-  postsScheduled: number
-  postsPosted: number
-}
-
 export interface AuthState {
   // Auth state
   isAuthenticated: boolean
@@ -25,12 +19,10 @@ export interface AuthState {
   
   // User data
   user: User | null
-  usage: Usage | null
   
   // Actions
   setToken: (token: string) => void
   setUser: (user: User) => void
-  setUsage: (usage: Usage) => void
   setLoading: (loading: boolean) => void
   logout: () => void
 }
@@ -43,7 +35,6 @@ export const useAuthStore = create<AuthState>()(
       hasHydrated: false,
       isLoading: false,
       token: null,
-      usage: null,
 
       // Actions
       setToken: (token: string) => {
@@ -56,10 +47,6 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user: User) => {
         set({ user })
-      },
-
-      setUsage: (usage: Usage) => {
-        set({ usage })
       },
 
       setLoading: (loading: boolean) => {
@@ -75,7 +62,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           token: null,
           user: null,
-          usage: null,
         })
       },    
     }),
