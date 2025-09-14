@@ -46,7 +46,7 @@ export interface UsageSummary {
 
 export interface MeResponse {
   user: UserProfile;
-  account: SocialAccountSummary | null;
+  account: SocialAccountSummary & { isVoiceProfileCreated?: boolean } | null;
 }
 
 // Source types
@@ -225,6 +225,11 @@ export interface VoiceProfileRules {
   hashtags?: boolean;
   mentions?: boolean;
   emojis?: boolean;
+  vocabulary?: string[];
+  topics?: string[];
+  sentenceStructure?: string;
+  engagement?: string;
+  personality?: string[];
   [key: string]: any; // Allow custom rules
 }
 
@@ -241,4 +246,18 @@ export interface CreateVoiceProfileRequest {
 
 export interface UpdateVoiceProfileRequest {
   rules: Partial<VoiceProfileRules>;
+}
+
+export interface VoiceProfileErrorResponse {
+  ok: false;
+  error: {
+    code: 'NO_FILES_PROVIDED' | 'INVALID_IMAGE_COUNT' | 'INVALID_FILE_TYPE' | 'IMAGE_PARSING_FAILED' | 'VOICE_PROFILE_GENERATION_FAILED';
+    message: string;
+  };
+}
+
+export interface VoiceProfileSuccessResponse {
+  ok: true;
+  data: VoiceProfile;
+  message?: string;
 }

@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { VoiceProfileProvider } from '@/contexts/VoiceProfileContext'
 import { useState } from 'react'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -19,8 +20,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      <VoiceProfileProvider>
+        {children}
+        <ReactQueryDevtools initialIsOpen={false} />
+      </VoiceProfileProvider>
     </QueryClientProvider>
   )
 }

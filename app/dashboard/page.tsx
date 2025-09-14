@@ -8,29 +8,26 @@ import { CommunitiesCard } from "@/components/cards/CommunitiesCard"
 import { StatusCard } from "@/components/cards/StatusCard"
 import { EditPlanModal } from "@/components/modals/EditPlanModal"
 import { useAuth } from "@/hooks/useAuth"
+import { VoiceProfileBanner } from "@/components/VoiceProfileBanner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Toast, useToast } from "@/components/ui/toast"
 
 function DashboardContent() {
   const { user, account } = useAuth()
-  const { toasts, addToast, removeToast } = useToast()
   const [editPlanOpen, setEditPlanOpen] = useState(false)
 
   const handleReorderCommunities = async (communities: any[]) => {
     try {
       // TODO: Call API to reorder communities
       console.log("Reordered communities:", communities)
-      addToast("Communities reordered successfully!", "success")
     } catch (error) {
-      addToast("Failed to reorder communities", "error")
+      console.error("Failed to reorder communities:", error)
     }
   }
 
   const handleManageCommunities = () => {
     // TODO: Open manage communities modal/page
     console.log("Manage communities")
-    addToast("Manage communities feature coming soon!", "info")
   }
 
   return (
@@ -58,6 +55,13 @@ function DashboardContent() {
           </div>
         </div>
 
+        {/* Voice Profile Banner - Show only if voice profile is not created */}
+        {account && !account.isVoiceProfileCreated && (
+          <div className="mb-8">
+            <VoiceProfileBanner />
+          </div>
+        )}
+
         {/* Highlight Status Card - Full Width */}
         <div className="mb-8">
           <StatusCard />
@@ -81,16 +85,6 @@ function DashboardContent() {
         open={editPlanOpen}
         onOpenChange={setEditPlanOpen}
       />
-
-      {/* Toast Notifications */}
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          onClose={() => removeToast(toast.id)}
-        />
-      ))}
     </div>
   )
 }

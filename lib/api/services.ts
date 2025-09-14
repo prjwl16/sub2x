@@ -248,14 +248,24 @@ export const systemApi = {
 // Voice Profile
 export const voiceProfileApi = {
   // GET /api/voice-profile
-  getVoiceProfile: async (): Promise<VoiceProfile[]> => {
+  getVoiceProfile: async (): Promise<VoiceProfile> => {
     const response = await apiClient.get('/voice-profile');
     return response.data.data;
   },
 
-  // POST /api/voice-profile
-  createVoiceProfile: async (data: CreateVoiceProfileRequest): Promise<VoiceProfile> => {
-    const response = await apiClient.post('/voice-profile', data);
+  // POST /api/voice-profile (multipart/form-data for images)
+  generateVoiceProfile: async (images: File[]): Promise<VoiceProfile> => {
+    const formData = new FormData();
+    images.forEach(file => {
+      formData.append('images', file);
+    });
+    
+    const response = await apiClient.post('/voice-profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 60000, // 1 minute timeout for voice profile generation
+    });
     return response.data.data;
   },
 

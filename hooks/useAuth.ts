@@ -40,6 +40,7 @@ export const useAuth = () => {
       username: meData.account.username,
       displayName: meData.account.displayName || '',
       expiresAt: meData.account.expiresAt,
+      isVoiceProfileCreated: meData.account.isVoiceProfileCreated || false,
     } : null,
     
     // Actions

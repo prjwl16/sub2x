@@ -275,13 +275,14 @@ export const useVoiceProfile = (options?: { enabled?: boolean }) => {
   });
 };
 
-export const useCreateVoiceProfile = () => {
+export const useGenerateVoiceProfile = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: voiceProfileApi.createVoiceProfile,
+    mutationFn: voiceProfileApi.generateVoiceProfile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.voiceProfile });
+      queryClient.invalidateQueries({ queryKey: queryKeys.me });
     },
   });
 };
