@@ -5,15 +5,17 @@ import { DashboardHeader } from "@/components/DashboardHeader"
 import { ConnectedAccountCard } from "@/components/cards/ConnectedAccountCard"
 import { PostingPlanCard } from "@/components/cards/PostingPlanCard"
 import { CommunitiesCard } from "@/components/cards/CommunitiesCard"
-import { StatusCard } from "@/components/cards/StatusCard"
+import { TweetCarousel } from "@/components/TweetCarousel"
 import { EditPlanModal } from "@/components/modals/EditPlanModal"
 import { useAuth } from "@/hooks/useAuth"
 import { VoiceProfileBanner } from "@/components/VoiceProfileBanner"
+import { useVoiceProfileCreation } from "@/contexts/VoiceProfileContext"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 function DashboardContent() {
   const { user, account } = useAuth()
+  const { isCreating } = useVoiceProfileCreation()
   const [editPlanOpen, setEditPlanOpen] = useState(false)
 
   const handleReorderCommunities = async (communities: any[]) => {
@@ -55,16 +57,16 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Voice Profile Banner - Show only if voice profile is not created */}
-        {account && !account.isVoiceProfileCreated && (
+        {/* Voice Profile Banner - Show only if voice profile is not created and not currently creating */}
+        {account && !account.isVoiceProfileCreated && !isCreating && (
           <div className="mb-8">
             <VoiceProfileBanner />
           </div>
         )}
 
-        {/* Highlight Status Card - Full Width */}
+        {/* Tweet Carousel - Full Width */}
         <div className="mb-8">
-          <StatusCard />
+          <TweetCarousel />
         </div>
 
         {/* Dashboard Grid */}

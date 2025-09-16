@@ -6,38 +6,42 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Calendar, Hash, Loader2, CheckCircle, AlertCircle, Send, ChevronLeft, ChevronRight, Eye } from "lucide-react"
 import { useState, useRef } from "react"
 import Link from "next/link"
-import { useDrafts, usePosts, useGenerateTweets, usePostAction, useApproveDraft, useRejectDraft } from "@/lib/api"
+import { usePosts, useGenerateTweets, usePostAction, useApproveDraft, useRejectDraft } from "@/lib/api"
 
-interface StatusCardProps {}
+interface StatusCardProps { }
 
-export function StatusCard({}: StatusCardProps) {
+export function StatusCard({ }: StatusCardProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [actioningIds, setActioningIds] = useState<Set<string>>(new Set())
   const [generateSuccess, setGenerateSuccess] = useState<string | null>(null)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
 
-  // Use TanStack Query hooks
-  const { data: draftsData, isLoading: draftsLoading } = useDrafts({ status: 'DRAFT' }, { limit: 5 })
-  const { data: postsData, isLoading: postsLoading } = usePosts({ status: 'SCHEDULED' }, { limit: 5 })
-  const { data: lastPostedData } = usePosts({ status: 'POSTED' }, { limit: 1 })
-  
+  // Use TanStack Query hooks - fetch all posts with pagination
+  const { data: postsData, isLoading: postsLoading } = usePosts({}, { limit: 20 })
+
+  console.log(postsData)
+
   // Mutations
   const generateTweetsMutation = useGenerateTweets()
   const postActionMutation = usePostAction()
   const approveDraftMutation = useApproveDraft()
   const rejectDraftMutation = useRejectDraft()
 
-  const drafts = draftsData?.items || []
-  const upcomingTweets = postsData?.items || []
-  const lastPostedTweet = lastPostedData?.items?.[0] || null
-  const isLoading = draftsLoading || postsLoading
+  // Filter posts by status
+  const allPosts = postsData?.items || []
+  const drafts = allPosts.filter(post => post.status === 'DRAFT')
+  const scheduledPosts = allPosts.filter(post => post.status === 'SCHEDULED')
+  const postedTweets = allPosts.filter(post => post.status === 'POSTED')
+  
+  const upcomingTweets = scheduledPosts
+  const lastPostedTweet = postedTweets[0] || null
 
   // Generate a single tweet
   const generateSingleTweet = async () => {
     try {
       const result = await generateTweetsMutation.mutateAsync()
-      
+
       if (result.success && result.data) {
         setGenerateSuccess('Generated 1 new tweet!')
         setTimeout(() => setGenerateSuccess(null), 5000)
@@ -56,7 +60,7 @@ export function StatusCard({}: StatusCardProps) {
   // Handle post actions (post now, approve, reject)
   const handlePostAction = async (id: string, action: 'post_now' | 'approve' | 'reject') => {
     setActioningIds(prev => new Set([...prev, id]))
-    
+
     try {
       if (action === 'approve') {
         await approveDraftMutation.mutateAsync(id)
@@ -99,7 +103,7 @@ export function StatusCard({}: StatusCardProps) {
     const now = new Date()
     const dateObj = new Date(date)
     const diffInHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60))
-    
+
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60))
       return `${diffInMinutes}m ago`
@@ -120,7 +124,7 @@ export function StatusCard({}: StatusCardProps) {
 
     const hours = Math.floor(timeLeft / (1000 * 60 * 60))
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
-    
+
     if (hours > 0) {
       return `in ${hours}h ${minutes}m`
     } else {
@@ -129,8 +133,8 @@ export function StatusCard({}: StatusCardProps) {
   }
 
   const formatScheduledDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('en-US', { 
-      month: 'short', 
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -163,7 +167,7 @@ export function StatusCard({}: StatusCardProps) {
     setCurrentSlide(prev => (prev - 1 + totalItems) % totalItems)
   }
 
-  if (isLoading) {
+  if (postsLoading) {
     return (
       <Card className="glass-card">
         <CardContent className="space-y-4 p-6">
@@ -243,7 +247,7 @@ export function StatusCard({}: StatusCardProps) {
           <>
             {/* Carousel */}
             <div className="overflow-hidden">
-              <div 
+              <div
                 ref={carouselRef}
                 className="flex transition-transform duration-300 ease-in-out"
                 style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -262,19 +266,19 @@ export function StatusCard({}: StatusCardProps) {
                             {formatRelativeTime(draft.createdAt)}
                           </span>
                         </div>
-                        
+
                         {/* Tweet Content - Full Text */}
                         <div className="bg-gray-50 rounded-lg p-4">
                           <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                            {draft.text}
+                            {draft.draft?.text || 'No content available'}
                           </p>
                         </div>
 
                         {/* Source Info */}
-                        {draft.sourceItem && (
+                        {draft.draft && (
                           <div className="flex items-center space-x-2 text-sm text-gray-500">
                             <Hash className="w-4 h-4" />
-                            <span>r/{draft.sourceItem.subreddit?.name || 'unknown'}</span>
+                            <span>r/unknown</span>
                           </div>
                         )}
 
@@ -331,7 +335,7 @@ export function StatusCard({}: StatusCardProps) {
                             {getTimeUntilNext(tweet.scheduledFor)}
                           </span>
                         </div>
-                        
+
                         {/* Tweet Content - Full Text */}
                         {tweet.draft && (
                           <div className="bg-gray-50 rounded-lg p-4">
@@ -386,7 +390,7 @@ export function StatusCard({}: StatusCardProps) {
                       <p className="text-gray-600 mb-6 max-w-sm">
                         Create a new tweet from your curated Reddit sources.
                       </p>
-                      
+
                       <Button
                         onClick={generateSingleTweet}
                         disabled={generateTweetsMutation.isPending}
@@ -421,18 +425,17 @@ export function StatusCard({}: StatusCardProps) {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                
+
                 <div className="flex space-x-2">
                   {Array.from({ length: allItems.length + 1 }).map((_, index) => (
                     <div
                       key={index}
-                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                        index === currentSlide ? 'bg-gray-800' : 'bg-gray-300'
-                      }`}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentSlide ? 'bg-gray-800' : 'bg-gray-300'
+                        }`}
                     />
                   ))}
                 </div>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -454,7 +457,7 @@ export function StatusCard({}: StatusCardProps) {
             <p className="text-gray-600 mb-6 max-w-md">
               Get started by generating your first tweet from your curated Reddit sources.
             </p>
-            
+
             <Button
               onClick={generateSingleTweet}
               disabled={generateTweetsMutation.isPending}

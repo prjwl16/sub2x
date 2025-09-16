@@ -108,6 +108,7 @@ export interface SchedulePolicy {
 // Post types
 export interface PostItem {
   id: string;
+  content: string;
   status: string;
   scheduledFor: string;
   postedAt: string | null;
@@ -116,15 +117,6 @@ export interface PostItem {
   attemptCount: number;
   createdAt: string;
   updatedAt: string;
-  draft?: {
-    id: string;
-    text: string;
-  } | null;
-  socialAccount: {
-    id: string;
-    provider: string;
-    username: string | null;
-  };
 }
 
 export interface PostEvent {
@@ -217,47 +209,5 @@ export interface SubredditSuggestion {
   audience?: string;
 }
 
-// Voice Profile types
-export interface VoiceProfileRules {
-  tone: 'professional' | 'casual' | 'friendly' | 'formal' | 'humorous';
-  style: 'informative' | 'entertaining' | 'persuasive' | 'educational' | 'conversational';
-  length: 'short' | 'medium' | 'long';
-  hashtags?: boolean;
-  mentions?: boolean;
-  emojis?: boolean;
-  vocabulary?: string[];
-  topics?: string[];
-  sentenceStructure?: string;
-  engagement?: string;
-  personality?: string[];
-  [key: string]: any; // Allow custom rules
-}
-
-export interface VoiceProfile {
-  id: string;
-  rules: VoiceProfileRules;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateVoiceProfileRequest {
-  rules: VoiceProfileRules;
-}
-
-export interface UpdateVoiceProfileRequest {
-  rules: Partial<VoiceProfileRules>;
-}
-
-export interface VoiceProfileErrorResponse {
-  ok: false;
-  error: {
-    code: 'NO_FILES_PROVIDED' | 'INVALID_IMAGE_COUNT' | 'INVALID_FILE_TYPE' | 'IMAGE_PARSING_FAILED' | 'VOICE_PROFILE_GENERATION_FAILED';
-    message: string;
-  };
-}
-
-export interface VoiceProfileSuccessResponse {
-  ok: true;
-  data: VoiceProfile;
-  message?: string;
-}
+// Re-export voice profile types from dedicated file
+export * from '@/types/voice-profile'

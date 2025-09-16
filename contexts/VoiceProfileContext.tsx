@@ -3,22 +3,12 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from "react"
 import { useGenerateVoiceProfile } from "@/lib/api/hooks"
 import { toast } from "sonner"
-
-interface VoiceProfileState {
-  selectedFiles: File[]
-  isCreating: boolean
-  error: string | null
-  hasFailedAttempt: boolean
-}
-
-interface VoiceProfileContextType extends VoiceProfileState {
-  setSelectedFiles: (files: File[]) => void
-  setError: (error: string | null) => void
-  startCreation: () => Promise<{ shouldCloseModal: boolean }>
-  clearError: () => void
-  reset: () => void
-  simulateFailure: () => void
-}
+import { 
+  VOICE_PROFILE_CONSTANTS, 
+  VOICE_PROFILE_MESSAGES, 
+  handleVoiceProfileError
+} from "@/lib/voice-profile"
+import { VoiceProfileState, VoiceProfileContextType } from "@/types/voice-profile"
 
 const VoiceProfileContext = createContext<VoiceProfileContextType | null>(null)
 
@@ -36,7 +26,6 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
   const creationPromiseRef = useRef<Promise<void> | null>(null)
 
   const setSelectedFiles = useCallback((files: File[]) => {
-    console.log("VoiceProfileContext: Setting selected files", files.length)
     setState(prev => ({ 
       ...prev, 
       selectedFiles: files, 
@@ -46,15 +35,12 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
   }, [])
 
   const setError = useCallback((error: string | null) => {
-    console.log("VoiceProfileContext: Setting error", error)
     setState(prev => ({ ...prev, error }))
   }, [])
 
   const startCreation = useCallback(async (): Promise<{ shouldCloseModal: boolean }> => {
-    console.log("VoiceProfileContext: Starting creation with", state.selectedFiles.length, "files")
-    
     if (state.selectedFiles.length === 0) {
-      setError("Please select at least one image.")
+      setError(VOICE_PROFILE_MESSAGES.NO_FILES)
       return { shouldCloseModal: false }
     }
 
@@ -66,12 +52,11 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
     setState(prev => ({ ...prev, isCreating: true, error: null }))
     
     // Show initial toast
-    toast.info("Voice profile creation started...")
+    toast.info(VOICE_PROFILE_MESSAGES.CREATION_STARTED)
 
     // Create the promise and store it
     const creationPromise = generateVoiceProfile.mutateAsync(state.selectedFiles)
       .then((result) => {
-        console.log("VoiceProfileContext: Voice profile created successfully:", result)
         // Success - clear everything
         setState({
           selectedFiles: [],
@@ -79,39 +64,17 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
           error: null,
           hasFailedAttempt: false,
         })
-        toast.success("Voice profile created! You can start generating tweets")
+        toast.success(VOICE_PROFILE_MESSAGES.CREATION_SUCCESS)
       })
       .catch((error: any) => {
-        console.error("VoiceProfileContext: Voice profile creation failed:", error)
-        // Failure - keep files, set error state
-        let errorMessage = "Failed to create voice profile"
-        
-        // Handle different error types
-        if (error?.response) {
-          // HTTP error response
-          const status = error.response.status
-          const data = error.response.data
-          
-          if (data?.error?.message) {
-            errorMessage = data.error.message
-          } else if (status >= 400 && status < 500) {
-            errorMessage = "Invalid request. Please check your images and try again."
-          } else if (status >= 500) {
-            errorMessage = "Server error. Please try again later."
-          }
-        } else if (error?.message) {
-          // Network or other error
-          errorMessage = error.message
-        }
-        
-        console.log("VoiceProfileContext: Setting failed attempt state")
+        const { message } = handleVoiceProfileError(error)
         setState(prev => ({
           ...prev,
           isCreating: false,
-          error: errorMessage,
+          error: message,
           hasFailedAttempt: true,
         }))
-        toast.error("Voice profile creation failed. Please try again.")
+        toast.error(VOICE_PROFILE_MESSAGES.CREATION_FAILED)
       })
       .finally(() => {
         creationPromiseRef.current = null
@@ -120,19 +83,17 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
     creationPromiseRef.current = creationPromise
 
     // Add delay to ensure toast is visible before closing modal
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    await new Promise(resolve => setTimeout(resolve, VOICE_PROFILE_CONSTANTS.TOAST_DELAY))
     
     // Return to close modal after delay
     return { shouldCloseModal: true }
   }, [state.selectedFiles, generateVoiceProfile, setError])
 
   const clearError = useCallback(() => {
-    console.log("VoiceProfileContext: Clearing error")
     setState(prev => ({ ...prev, error: null, hasFailedAttempt: false }))
   }, [])
 
   const reset = useCallback(() => {
-    console.log("VoiceProfileContext: Resetting state")
     // Only reset if not currently creating
     if (!state.isCreating) {
       setState({
@@ -144,16 +105,6 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
     }
   }, [state.isCreating])
 
-  // Debug function to simulate failure (remove in production)
-  const simulateFailure = useCallback(() => {
-    console.log("VoiceProfileContext: Simulating failure")
-    setState(prev => ({
-      ...prev,
-      error: "Simulated API failure for testing",
-      hasFailedAttempt: true,
-    }))
-    toast.error("Simulated failure - modal should reopen")
-  }, [])
 
   const value: VoiceProfileContextType = {
     ...state,
@@ -162,7 +113,6 @@ export function VoiceProfileProvider({ children }: { children: React.ReactNode }
     startCreation,
     clearError,
     reset,
-    simulateFailure,
   }
 
   return (

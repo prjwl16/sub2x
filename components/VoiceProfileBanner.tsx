@@ -13,24 +13,11 @@ interface VoiceProfileBannerProps {
 export function VoiceProfileBanner({ className = "" }: VoiceProfileBannerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const voiceProfileState = useVoiceProfileCreation()
-  const { hasFailedAttempt, simulateFailure, selectedFiles, isCreating, error, clearError } = voiceProfileState
-
-  // Debug: log all state changes
-  useEffect(() => {
-    console.log("VoiceProfileBanner: State changed", {
-      hasFailedAttempt,
-      selectedFiles: selectedFiles.length,
-      isCreating,
-      error,
-      isModalOpen
-    })
-  }, [hasFailedAttempt, selectedFiles, isCreating, error, isModalOpen])
+  const { hasFailedAttempt, selectedFiles, isCreating, error, clearError } = voiceProfileState
 
   // Auto-open modal if there's a failed attempt
   useEffect(() => {
-    console.log("VoiceProfileBanner: hasFailedAttempt changed to", hasFailedAttempt)
     if (hasFailedAttempt && !isModalOpen) {
-      console.log("VoiceProfileBanner: Opening modal due to failed attempt")
       setIsModalOpen(true)
     }
   }, [hasFailedAttempt, isModalOpen])
@@ -64,20 +51,12 @@ export function VoiceProfileBanner({ className = "" }: VoiceProfileBannerProps) 
               </div>
             </div>
           </div>
-          <div className="flex-shrink-0 flex gap-2">
+          <div className="flex-shrink-0">
             <Button
               onClick={() => setIsModalOpen(true)}
               className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
               Create Voice Profile
-            </Button>
-            {/* Debug button - remove in production */}
-            <Button
-              onClick={simulateFailure}
-              variant="outline"
-              className="text-xs px-3 py-1 text-red-600 border-red-300 hover:bg-red-50"
-            >
-              Test Failure
             </Button>
           </div>
         </div>
@@ -86,7 +65,6 @@ export function VoiceProfileBanner({ className = "" }: VoiceProfileBannerProps) 
       <VoiceProfileModal 
         isOpen={isModalOpen} 
         onClose={() => {
-          console.log("VoiceProfileBanner: Modal closing")
           setIsModalOpen(false)
           // Clear error state when modal is manually closed
           if (hasFailedAttempt) {

@@ -97,7 +97,7 @@ export const postsApi = {
     filter?: PostStatusFilter,
     pagination?: PaginationParams
   ): Promise<{
-    items: PostItem[];
+    data: PostItem[];
     meta: { total: number; offset: number; limit: number };
   }> => {
     const params = { ...filter, ...pagination };
@@ -176,7 +176,9 @@ export const scheduleApi = {
 export const tweetsApi = {
   // POST /api/tweets/generate
   generateTweets: async (): Promise<GenerateTweetResponse> => {
-    const response = await apiClient.post('/tweets/generate');
+    const response = await apiClient.post('/tweets/generate', {}, {
+      timeout: 60000, // 1 minute timeout for tweet generation
+    });
     return response.data;
   },
 };

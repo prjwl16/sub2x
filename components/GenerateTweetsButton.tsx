@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { useGenerateTweets } from '@/lib/api/hooks'
 
 interface GeneratedTweet {
   id: string
@@ -34,21 +35,11 @@ export function GenerateTweetsButton({
   onError, 
   className 
 }: GenerateTweetsButtonProps) {
-  const [isGenerating, setIsGenerating] = useState(false)
+  const generateTweetsMutation = useGenerateTweets()
 
   const generateTweets = async () => {
-    setIsGenerating(true)
-    
     try {
-      const response = await fetch('/api/tweets/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include session cookie
-      })
-      
-      const result: GenerateTweetsResponse = await response.json()
+      const result = await generateTweetsMutation.mutateAsync()
       
       if (result.success && result.data) {
         console.log(`Generated ${result.data.tweetsGenerated} tweets!`)
@@ -58,11 +49,9 @@ export function GenerateTweetsButton({
         console.error('Tweet generation failed:', errorMessage)
         onError?.(errorMessage, result.code)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate tweets:', error)
       onError?.('Something went wrong. Please try again.', 'NETWORK_ERROR')
-    } finally {
-      setIsGenerating(false)
     }
   }
 
@@ -92,10 +81,10 @@ export function GenerateTweetsButton({
   return (
     <Button
       onClick={generateTweets}
-      disabled={isGenerating}
+      disabled={generateTweetsMutation.isPending}
       className={className}
     >
-      {isGenerating ? (
+      {generateTweetsMutation.isPending ? (
         <>
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
           Generating...
