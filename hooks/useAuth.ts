@@ -22,25 +22,27 @@ export const useAuth = () => {
   // Update store when API data changes
   React.useEffect(() => {
     if (meData) {
-      setUser(meData.user)
+      setUser(meData)
     }
   }, [meData, setUser])
 
+  // Get the first integration (X account) for backward compatibility
+  const xIntegration = user?.integrations?.find(integration => integration.type === 'X') || meData?.integrations?.find(integration => integration.type === 'X')
 
   return {
     // State
     isAuthenticated,
     isLoading: isLoading || (!!token && (meLoading)),
     token,
-    user: user || meData?.user,
-    account: meData?.account && meData.account.username ? {
-      id: meData.account.id,
-      provider: meData.account.provider,
-      providerAccountId: meData.account.providerAccountId,
-      username: meData.account.username,
-      displayName: meData.account.displayName || '',
-      expiresAt: meData.account.expiresAt,
-      isVoiceProfileCreated: meData.account.isVoiceProfileCreated || false,
+    user: user || meData,
+    account: xIntegration ? {
+      id: xIntegration.id,
+      provider: xIntegration.type,
+      providerAccountId: xIntegration.accountId,
+      username: xIntegration.accountName,
+      displayName: xIntegration.accountName,
+      expiresAt: null,
+      isVoiceProfileCreated: false, // This would need to be determined from voice profile API
     } : null,
     
     // Actions

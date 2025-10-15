@@ -1,24 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Providers } from "@/components/Providers";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { AuthInitializer } from "@/components/AuthInitializer";
+import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+import { Providers } from "@/context/providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Sub2X — Daily tweets. Zero effort.",
+  title: "Sub2X; Daily tweets. Zero effort.",
   description: "Pick your Reddit communities → AI shapes them into authentic tweets → you stay active on X.",
 };
 
@@ -28,18 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-grid`}
-      >
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn("antialiased", geistSans.className)}>
         <Providers>
-          {/* <AuthInitializer /> */}
-          <div className="flex flex-col min-h-screen max-w-4xl mx-auto">
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          {children}
           <Toaster />
         </Providers>
       </body>

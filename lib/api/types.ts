@@ -19,14 +19,25 @@ export interface ApiErrorBody {
 }
 
 // User types
+export interface Integration {
+  id: string;
+  type: string;
+  accountId: string;
+  accountName: string;
+}
+
 export interface UserProfile {
   id: string;
+  xId: string;
+  username: string;
   email: string | null;
-  name: string | null;
-  image: string | null;
-  handle: string | null;
+  name: string;
+  avatar: string;
+  orgId: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  integrations: Integration[];
 }
 
 export interface SocialAccountSummary {
@@ -44,10 +55,7 @@ export interface UsageSummary {
   postsPosted: number;
 }
 
-export interface MeResponse {
-  user: UserProfile;
-  account: SocialAccountSummary & { isVoiceProfileCreated?: boolean } | null;
-}
+export interface MeResponse extends UserProfile {}
 
 // Source types
 export interface SourceItem {

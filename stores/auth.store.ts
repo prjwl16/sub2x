@@ -1,14 +1,26 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export interface Integration {
+  id: string
+  type: string
+  accountId: string
+  accountName: string
+}
+
 export interface User {
   id: string
-  email?: string | null
-  name?: string | null
-  image?: string | null
-  handle?: string | null
+  xId: string
+  username: string
+  email: string | null
+  name: string
+  avatar: string
+  orgId: string
   createdAt: string
   updatedAt: string
+  deletedAt: string | null
+  integrations: Integration[]
+  [key: string]: any
 }
 
 export interface AuthState {

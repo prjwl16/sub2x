@@ -31,7 +31,7 @@ export const userApi = {
   // GET /api/me
   getMe: async (): Promise<MeResponse> => {
     const response = await apiClient.get('/me');
-    return response.data.data;
+    return response.data;
   },
 
   // POST /api/me

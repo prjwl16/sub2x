@@ -34,10 +34,12 @@ function AuthContent() {
       try {
         setToken(token)
         const me = await userApi.getMe()
-        setUser(me.user)
+        console.log("me::: ", me)
+        setUser(me)
         console.log("me", me)
         router.replace("/dashboard")
       } catch (e: any) {
+        console.log("e", e)
         if (e?.response?.status === 404) {
           setError("User not found. Please sign in again.")
           setTimeout(() => router.replace('/'), 2000)
